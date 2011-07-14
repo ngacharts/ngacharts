@@ -46,8 +46,8 @@ fi
 tmpI1="$tmpdir/preprocess_I_$$.jpg"
 tmpP1="$tmpdir/preprocess_P_$$.png"
 tmpP2="$tmpdir/preprocess_PD_$$.png"
-#trap "rm -f $tmpI1 $tmpP1 $tmpP2; exit 0" 0
-#trap "rm -f $tmpI1 $tmpP1 $tmpP2; exit 1" 1 2 3 15
+trap "rm -f $tmpI1 $tmpP1 $tmpP2; exit 0" 0
+trap "rm -f $tmpI1 $tmpP1 $tmpP2; exit 1" 1 2 3 15
 
 # read the input image and filter image into the temp files and test validity.
 convert -quiet -regard-warnings "$infile" +repage "$tmpP1" ||

@@ -1,0 +1,57 @@
+#!/bin/bash
+#Standard image preprocessing script
+
+#set default values
+ngadir="/home/nohal/nga" # top level directory of the nga chart images
+tmpdir="." # directory for temporary files
+
+# set up functions to report Usage and Usage with Description
+PROGNAME=`type $0 | awk '{print $3}'`  # search for executable on path
+PROGDIR=`dirname $PROGNAME`            # extract directory of program
+PROGNAME=`basename $PROGNAME`          # base name of program
+
+# function to print usage instructions
+usage()
+	{
+	echo >&2 ""
+	echo >&2 "Usage: $PROGNAME <chart number>"
+	}
+
+# function to report error messages
+errMsg()
+        {
+        echo ""
+        echo $1
+        echo ""
+        usage
+        exit 1
+        }
+
+
+if [ $# -eq 0 ]
+        then
+        # help information
+	echo ""
+   	usage
+   	exit 0
+elif [ $# -gt 1 ]
+   	then
+   	errMsg "--- TOO MANY ARGUMENTS WERE PROVIDED ---"
+else
+	infile=$ngadir/$1/$1.jpg
+	outfileSW=$ngadir/$1/$1_sw.png
+	outfileNW=$ngadir/$1/$1_nw.png
+	outfileNE=$ngadir/$1/$1_ne.png
+	outfileSE=$ngadir/$1/$1_se.png
+fi
+
+
+# crop the 4 corners
+convert -quiet -regard-warnings "$infile" -gravity SouthWest -crop 1500x1500+0+0 -depth 8 -type Palette -colors 32 png8:$outfileSW ||
+        errMsg "--- FILE $infile CAN'T BE CROPPED  ---"
+convert -quiet -regard-warnings "$infile" -gravity NorthWest -crop 1500x1500+0+0 -depth 8 -type Palette -colors 32 png8:$outfileNW ||
+        errMsg "--- FILE $infile CAN'T BE CROPPED  ---"
+convert -quiet -regard-warnings "$infile" -gravity NorthEast -crop 1500x1500+0+0 -depth 8 -type Palette -colors 32 png8:$outfileNE ||
+        errMsg "--- FILE $infile CAN'T BE CROPPED  ---"
+convert -quiet -regard-warnings "$infile" -gravity SouthEast -crop 1500x1500+0+0 -depth 8 -type Palette -colors 32 png8:$outfileSE ||
+        errMsg "--- FILE $infile CAN'T BE CROPPED  ---"
