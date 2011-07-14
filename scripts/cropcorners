@@ -1,5 +1,5 @@
 #!/bin/bash
-#Standard image preprocessing script
+#Crops the 4 1500x1500 corner areas from the chart
 
 #set default values
 ngadir="/home/nohal/nga" # top level directory of the nga chart images
