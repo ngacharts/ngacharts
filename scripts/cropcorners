@@ -47,11 +47,11 @@ fi
 
 
 # crop the 4 corners
-convert -quiet -regard-warnings "$infile" -gravity SouthWest -crop 1500x1500+0+0 -depth 8 -type Palette -colors 32 png8:$outfileSW ||
+ionice -c3 convert -quiet -regard-warnings "$infile" -gravity SouthWest -crop 1500x1500+0+0 -depth 8 -type Palette -colors 32 png8:$outfileSW ||
         errMsg "--- FILE $infile CAN'T BE CROPPED  ---"
-convert -quiet -regard-warnings "$infile" -gravity NorthWest -crop 1500x1500+0+0 -depth 8 -type Palette -colors 32 png8:$outfileNW ||
+ionice -c3 convert -quiet -regard-warnings "$infile" -gravity NorthWest -crop 1500x1500+0+0 -depth 8 -type Palette -colors 32 png8:$outfileNW ||
         errMsg "--- FILE $infile CAN'T BE CROPPED  ---"
-convert -quiet -regard-warnings "$infile" -gravity NorthEast -crop 1500x1500+0+0 -depth 8 -type Palette -colors 32 png8:$outfileNE ||
+ionice -c3 convert -quiet -regard-warnings "$infile" -gravity NorthEast -crop 1500x1500+0+0 -depth 8 -type Palette -colors 32 png8:$outfileNE ||
         errMsg "--- FILE $infile CAN'T BE CROPPED  ---"
-convert -quiet -regard-warnings "$infile" -gravity SouthEast -crop 1500x1500+0+0 -depth 8 -type Palette -colors 32 png8:$outfileSE ||
+ionice -c3 convert -quiet -regard-warnings "$infile" -gravity SouthEast -crop 1500x1500+0+0 -depth 8 -type Palette -colors 32 png8:$outfileSE ||
         errMsg "--- FILE $infile CAN'T BE CROPPED  ---"

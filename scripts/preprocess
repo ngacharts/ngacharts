@@ -50,17 +50,17 @@ trap "rm -f $tmpI1 $tmpP1 $tmpP2; exit 0" 0
 trap "rm -f $tmpI1 $tmpP1 $tmpP2; exit 1" 1 2 3 15
 
 # read the input image and filter image into the temp files and test validity.
-convert -quiet -regard-warnings "$infile" +repage "$tmpP1" ||
+onice -c3 convert -quiet -regard-warnings "$infile" +repage "$tmpP1" ||
         errMsg "--- FILE $infile DOES NOT EXIST OR IS NOT AN ORDINARY FILE, NOT READABLE OR HAS ZERO SIZE  ---"
 
 # convert to png
-#convert -quiet -regard-warnings "$tmpI1" "$tmpP1" ||
+#ionice -c3 convert -quiet -regard-warnings "$tmpI1" "$tmpP1" ||
 #	errMsg "--- FILE $infile CAN'T BE CONVERTED TO PNG  ---"
 
 # denoise - VERY expensive operation! Take hours to complete
 # $PROGDIR/denoise -f 2 -s "20x20+203+152" -u 1 "$tmpP1" "$tmpP2"
 
 # shrink and convert to palette
-convert -quiet -regard-warnings "$tmpP1" -level 5% -resize 50% -depth 8 -colors 32 -type Palette "png8:$outfile" ||
+ionice -c3 convert -quiet -regard-warnings "$tmpP1" -level 5% -resize 50% -depth 8 -colors 32 -type Palette "png8:$outfile" ||
         errMsg "--- FILE $infile CAN'T BE SHRUNK TO PNG  ---"
 
