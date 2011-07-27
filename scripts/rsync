@@ -1,1 +1,1 @@
-rsync --verbose --progress --stats --recursive --times --compress --exclude ./incoming ./* rsync://nga@bontoc.webart.cz/nga-charts
+rsync --verbose --progress --stats --recursive --times --compress --exclude "incoming/*" ./* rsync://nga@bontoc.webart.cz/nga-charts

@@ -50,7 +50,7 @@ trap "rm -f $tmpI1 $tmpP1 $tmpP2; exit 0" 0
 trap "rm -f $tmpI1 $tmpP1 $tmpP2; exit 1" 1 2 3 15
 
 # read the input image and filter image into the temp files and test validity.
-onice -c3 convert -quiet -regard-warnings "$infile" +repage "$tmpP1" ||
+ionice -c3 convert -quiet -regard-warnings "$infile" +repage "$tmpP1" ||
         errMsg "--- FILE $infile DOES NOT EXIST OR IS NOT AN ORDINARY FILE, NOT READABLE OR HAS ZERO SIZE  ---"
 
 # convert to png
