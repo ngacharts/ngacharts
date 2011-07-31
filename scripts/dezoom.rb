@@ -3,6 +3,7 @@
 # By Henrik Nyh <http://henrik.nyh.se> 2009-02-06 under the MIT License.
 
 #Modified by "cagney" 2011-07-03
+#Modified by nohal 2011-07-31
 #taking chart #Number as argument
 #hardcoding the noaa site
 #renaming and moving the final chart picture to pwd
@@ -14,6 +15,50 @@ require 'open-uri'
 require 'rubygems'
 require 'nokogiri'
 require 'fileutils'
+
+def reconstruct_tile(zoom_level, tx, ty, target_file)
+  puts "reconstructing tile #{zoom_level}-#{tx}-#{ty}"
+  my_zoom_level = zoom_level - 1
+  my_x = (tx / 2).floor
+  my_y = (ty / 2).floor
+  my_tw = $tiles_wide
+  ($zoom - my_zoom_level).times do
+    my_tw = (my_tw / 2).ceil
+  end
+  tile_count_before_my_level = $tile_counts[0..-2 - $zoom + my_zoom_level].inject(0) {|sum, num| sum + num }
+  my_tile_group = ((my_x + my_y * my_tw + tile_count_before_my_level) / $tilesize).floor
+  my_filename = '%s-%s-%s.jpg' % [my_zoom_level, my_x, my_y]
+  my_tile_url = URI.join($full_path.to_s, "TileGroup#{my_tile_group}/#{my_filename}")
+  my_url = URI.join(my_tile_url.to_s, my_filename)
+  puts "    Getting #{my_url}..."
+  my_target_file = '%s.%s' % [target_file, my_filename]
+  File.open(my_target_file, 'wb') {|f|
+  begin
+    f.print my_url.read
+  rescue OpenURI::HTTPError
+    puts "Tile #{my_zoom_level}-#{my_x}-#{my_y} not found, trying to reconstruct from lower zoom levels"
+    reconstruct_tile my_zoom_level, my_x, my_y, my_target_file
+  end
+  }
+  #and now let's recreate the tile...
+  if (tx.modulo(my_x) == 0)
+    if (ty.modulo(my_y) == 0)
+      gravity = "NorthWest"
+    else
+      gravity = "SouthWest"
+    end
+  else
+    if (ty.modulo(my_y) == 0)
+      gravity = "NorthEast"
+    else
+      gravity = "SouthEast"
+    end
+  end
+
+  `convert #{my_target_file} -resize 200% -gravity #{gravity} -crop #{$tilesize}x#{$tilesize}+0+0 #{target_file}`
+  #puts "my: #{my_target_file} gravity: #{gravity} target: #{target_file}"
+  File.delete(my_target_file)
+end
 
 unless ARGV[0]
 	puts "\nUseage: #{$0}  Chart#"
@@ -34,56 +79,64 @@ unless ARGV[0]
   paths = html.scan(/zoomifyImagePath=([^"'&]+)/).flatten.map {|path| path.gsub(' ', '%20') }.uniq
   
   paths.each_with_index do |path, path_index|
-    full_path = URI.join(page_url, path+'/')
-    puts " Found image path #{full_path}"
+    $full_path = URI.join(page_url, path+'/')
+    puts " Found image path #{$full_path}"
 
 
     # <IMAGE_PROPERTIES WIDTH="1737" HEIGHT="2404" NUMTILES="99" NUMIMAGES="1" VERSION="1.8" TILESIZE="256"/>
-    xml_url = URI.join(full_path.to_s, 'ImageProperties.xml')
+    xml_url = URI.join($full_path.to_s, 'ImageProperties.xml')
     doc = Nokogiri::XML(open(xml_url))
     props = doc.at('IMAGE_PROPERTIES')
 
     width = props[:WIDTH].to_i
     height = props[:HEIGHT].to_i
-    tilesize = props[:TILESIZE].to_f
+    $tilesize = props[:TILESIZE].to_f
 
-    tiles_wide = (width/tilesize).ceil
-    tiles_high = (height/tilesize).ceil 
+    $tiles_wide = (width/$tilesize).ceil
+    tiles_high = (height/$tilesize).ceil 
     
     # Determine max zoom level.
     # Also determine tile_counts per zoom level, used to determine tile group.
     # With thanks to http://trac.openlayers.org/attachment/ticket/1285/zoomify.patch.
-    zoom = 0
+    $zoom = 0
     w = width
     h = height
-    tile_counts = []
-    while w > tilesize || h > tilesize
-      zoom += 1
+    $tile_counts = []
+    while w > $tilesize || h > $tilesize
+      $zoom += 1
       
-      t_wide = (w / tilesize).ceil
-      t_high = (h / tilesize).ceil
-      tile_counts.unshift t_wide*t_high
+      t_wide = (w / $tilesize).ceil
+      t_high = (h / $tilesize).ceil
+      $tile_counts.unshift t_wide*t_high
       
       w = (w / 2.0).floor
       h = (h / 2.0).floor
     end
-    tile_counts.unshift 1  # Zoom level 0 has a single tile.
-    tile_count_before_level = tile_counts[0..-2].inject(0) {|sum, num| sum + num }
+    $tile_counts.unshift 1  # Zoom level 0 has a single tile.
+    tile_count_before_level = $tile_counts[0..-2].inject(0) {|sum, num| sum + num }
     
     files_by_row = []
     tiles_high.times do |y|
       row = []
-      tiles_wide.times do |x|
-        filename = '%s-%s-%s.jpg' % [zoom, x, y]
+      $tiles_wide.times do |x|
+        filename = '%s-%s-%s.jpg' % [$zoom, x, y]
         local_filepath = "/tmp/zoomify-#{filename}"
         row << local_filepath
         
-        tile_group = ((x + y * tiles_wide + tile_count_before_level) / tilesize).floor
+        tile_group = ((x + y * $tiles_wide + tile_count_before_level) / $tilesize).floor
 
-        tile_url = URI.join(full_path.to_s, "TileGroup#{tile_group}/#{filename}")
+        tile_url = URI.join($full_path.to_s, "TileGroup#{tile_group}/#{filename}")
         url = URI.join(tile_url.to_s, filename)
         puts "    Getting #{url}..."
-        File.open(local_filepath, 'wb') {|f| f.print url.read }
+        #File.open(local_filepath, 'wb') {|f| f.print url.read }
+        File.open(local_filepath, 'wb') {|f|
+          begin
+            f.print url.read
+          rescue OpenURI::HTTPError
+            puts "Tile #{$zoom}-#{x}-#{y} not found, trying to reconstruct from lower zoom levels"
+            reconstruct_tile $zoom, x, y, local_filepath
+          end
+        }
       end
       files_by_row << row
     end
@@ -93,12 +146,12 @@ unless ARGV[0]
     # We first stitch together the tiles of each row, then stitch all rows.
     # Stitching the full image all at once can get extremely inefficient for large images.
     
-    puts "    Stitching #{tiles_wide} x #{tiles_high} = #{tiles_wide*tiles_high} tiles..."
+    puts "    Stitching #{$tiles_wide} x #{tiles_high} = #{$tiles_wide*tiles_high} tiles..."
     
     row_files = []
     files_by_row.each_with_index do |row, index|
       filename = "/tmp/zoomify-row-#{index}.jpg"
-      `montage #{row.join(' ')} -geometry +0+0 -tile #{tiles_wide}x1 #{filename}`
+      `montage #{row.join(' ')} -geometry +0+0 -tile #{$tiles_wide}x1 #{filename}`
       row_files << filename
     end
     
