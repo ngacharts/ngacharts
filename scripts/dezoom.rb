@@ -41,14 +41,14 @@ def reconstruct_tile(zoom_level, tx, ty, target_file)
   end
   }
   #and now let's recreate the tile...
-  if (tx.modulo(my_x) == 0)
-    if (ty.modulo(my_y) == 0)
+  if (my_x * 2 == tx)
+    if (my_y * 2 == ty)
       gravity = "NorthWest"
     else
       gravity = "SouthWest"
     end
   else
-    if (ty.modulo(my_y) == 0)
+    if (my_y *2 == ty)
       gravity = "NorthEast"
     else
       gravity = "SouthEast"
