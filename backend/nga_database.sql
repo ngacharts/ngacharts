@@ -1,15 +1,20 @@
 #############################################################################################################
 ##### Complete info about the cells
-CREATE VIEW ocpn_nga_charts_with_params
+CREATE OR REPLACE VIEW ocpn_nga_charts_with_params
 AS
 SELECT 
   c.number AS number, c.scale AS scale, c.title AS title, c.edition AS edition, c.date AS date, c.correction AS correction, c.width AS width, c.height AS height, c.tiles AS tiles, c.xtiles AS xtiles, c.ytiles AS ytiles, c.tilesize AS tilesize, c.zoomlevel AS zoomlevel, c.has_addition AS has_additions, 
   k.GD AS GD, k.PR AS PR, k.PP as PP, k.UN AS UN, k.SD AS SD, k.DTMx AS DTMx, k.DTMy AS DTMy, k.changed AS changed, k.changed_by AS changed_by,
   psw.latitude AS South, psw.longitude AS West, pne.latitude AS North, pne.longitude AS East,
-  FLOOR(psw.latitude) AS Sdeg, FLOOR((psw.latitude - FLOOR(psw.latitude)) * 60) AS Smin, ROUND((psw.latitude - FLOOR(psw.latitude) - FLOOR((psw.latitude - FLOOR(psw.latitude)) * 60) / 60) * 3600) AS Ssec,
-  FLOOR(pne.latitude) AS Ndeg, FLOOR((pne.latitude - FLOOR(pne.latitude)) * 60) AS Nmin, ROUND((pne.latitude - FLOOR(pne.latitude) - FLOOR((pne.latitude - FLOOR(pne.latitude)) * 60) / 60) * 3600) AS Nsec,
-  FLOOR(pne.longitude) + (FLOOR((pne.longitude - FLOOR(pne.longitude)) * 60) + ROUND((pne.longitude - FLOOR(pne.longitude) - FLOOR((pne.longitude - FLOOR(pne.longitude)) * 60) / 60) * 3600) DIV 60) DIV 60 AS Edeg, (FLOOR((pne.longitude - FLOOR(pne.longitude)) * 60) + ROUND((pne.longitude - FLOOR(pne.longitude) - FLOOR((pne.longitude - FLOOR(pne.longitude)) * 60) / 60) * 3600) DIV 60) % 60 AS Emin, ROUND((pne.longitude - FLOOR(pne.longitude) - FLOOR((pne.longitude - FLOOR(pne.longitude)) * 60) / 60) * 3600) % 60 AS Esec,
-  FLOOR(psw.longitude) + (FLOOR((psw.longitude - FLOOR(psw.longitude)) * 60) + ROUND((psw.longitude - FLOOR(psw.longitude) - FLOOR((psw.longitude - FLOOR(psw.longitude)) * 60) / 60) * 3600) DIV 60) DIV 60 AS Wdeg, (FLOOR((psw.longitude - FLOOR(psw.longitude)) * 60) + ROUND((psw.longitude - FLOOR(psw.longitude) - FLOOR((psw.longitude - FLOOR(psw.longitude)) * 60) / 60) * 3600) DIV 60) % 60 AS Wmin, ROUND((psw.longitude - FLOOR(psw.longitude) - FLOOR((psw.longitude - FLOOR(psw.longitude)) * 60) / 60) * 3600) % 60 AS Wsec,
+
+  FLOOR(ABS(psw.latitude)) + (FLOOR((ABS(psw.latitude) - FLOOR(ABS(psw.latitude))) * 60) + ROUND((ABS(psw.latitude) - FLOOR(ABS(psw.latitude)) - FLOOR((ABS(psw.latitude) - FLOOR(ABS(psw.latitude))) * 60) / 60) * 3600) DIV 60) DIV 60 AS Sdeg, (FLOOR((ABS(psw.latitude) - FLOOR(ABS(psw.latitude))) * 60) + ROUND((ABS(psw.latitude) - FLOOR(ABS(psw.latitude)) - FLOOR((ABS(psw.latitude) - FLOOR(ABS(psw.latitude))) * 60) / 60) * 3600) DIV 60) % 60 AS Smin, ROUND((ABS(psw.latitude) - FLOOR(ABS(psw.latitude)) - FLOOR((ABS(psw.latitude) - FLOOR(ABS(psw.latitude))) * 60) / 60) * 3600) % 60 AS Ssec, psw.latitude >= 0 AS Snhemi,
+ 
+  FLOOR(ABS(pne.latitude)) + (FLOOR((ABS(pne.latitude) - FLOOR(ABS(pne.latitude))) * 60) + ROUND((ABS(pne.latitude) - FLOOR(ABS(pne.latitude)) - FLOOR((ABS(pne.latitude) - FLOOR(ABS(pne.latitude))) * 60) / 60) * 3600) DIV 60) DIV 60 AS Ndeg, (FLOOR((ABS(pne.latitude) - FLOOR(ABS(pne.latitude))) * 60) + ROUND((ABS(pne.latitude) - FLOOR(ABS(pne.latitude)) - FLOOR((ABS(pne.latitude) - FLOOR(ABS(pne.latitude))) * 60) / 60) * 3600) DIV 60) % 60 AS Nmin, ROUND((ABS(pne.latitude) - FLOOR(ABS(pne.latitude)) - FLOOR((ABS(pne.latitude) - FLOOR(ABS(pne.latitude))) * 60) / 60) * 3600) % 60 AS Nsec, pne.latitude >= 0 AS Nnhemi,
+
+  FLOOR(ABS(pne.longitude)) + (FLOOR((ABS(pne.longitude) - FLOOR(ABS(pne.longitude))) * 60) + ROUND((ABS(pne.longitude) - FLOOR(ABS(pne.longitude)) - FLOOR((ABS(pne.longitude) - FLOOR(ABS(pne.longitude))) * 60) / 60) * 3600) DIV 60) DIV 60 AS Edeg, (FLOOR((ABS(pne.longitude) - FLOOR(ABS(pne.longitude))) * 60) + ROUND((ABS(pne.longitude) - FLOOR(ABS(pne.longitude)) - FLOOR((ABS(pne.longitude) - FLOOR(ABS(pne.longitude))) * 60) / 60) * 3600) DIV 60) % 60 AS Emin, ROUND((ABS(pne.longitude) - FLOOR(ABS(pne.longitude)) - FLOOR((ABS(pne.longitude) - FLOOR(ABS(pne.longitude))) * 60) / 60) * 3600) % 60 AS Esec, pne.longitude >= 0 AS Eehemi,
+  
+  FLOOR(ABS(psw.longitude)) + (FLOOR((ABS(psw.longitude) - FLOOR(ABS(psw.longitude))) * 60) + ROUND((ABS(psw.longitude) - FLOOR(ABS(psw.longitude)) - FLOOR((ABS(psw.longitude) - FLOOR(ABS(psw.longitude))) * 60) / 60) * 3600) DIV 60) DIV 60 AS Wdeg, (FLOOR((ABS(psw.longitude) - FLOOR(ABS(psw.longitude))) * 60) + ROUND((ABS(psw.longitude) - FLOOR(ABS(psw.longitude)) - FLOOR((ABS(psw.longitude) - FLOOR(ABS(psw.longitude))) * 60) / 60) * 3600) DIV 60) % 60 AS Wmin, ROUND((ABS(psw.longitude) - FLOOR(ABS(psw.longitude)) - FLOOR((ABS(psw.longitude) - FLOOR(ABS(psw.longitude))) * 60) / 60) * 3600) % 60 AS Wsec, pne.longitude >= 0 AS Wehemi,
+
   psw.x AS Xsw, psw.y AS Ysw, pnw.x AS Xnw, pnw.y AS Ynw, pne.x AS Xne, pne.y AS Yne, pse.x AS Xse, pse.y AS Yse
 FROM ocpn_nga_charts c 
    LEFT JOIN ocpn_nga_kap k ON (c.number = k.number and k.active = 1) 
