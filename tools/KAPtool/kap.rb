@@ -1,5 +1,3 @@
-require 'rubygems'
-
 class KAPHeader
   attr_accessor :comment, :ver
   attr_accessor :na, :nu, :ra, :du
