@@ -3,7 +3,7 @@
 CREATE OR REPLACE VIEW ocpn_nga_charts_with_params
 AS
 SELECT 
-  c.number AS number, c.scale AS scale, c.title AS title, c.edition AS edition, c.date AS date, c.correction AS correction, c.width AS width, c.height AS height, c.tiles AS tiles, c.xtiles AS xtiles, c.ytiles AS ytiles, c.tilesize AS tilesize, c.zoomlevel AS zoomlevel, c.has_addition AS has_additions, 
+  c.number AS number, c.scale AS scale, c.title AS title, c.edition AS edition, c.date AS date, c.correction AS correction, c.width AS width, c.height AS height, c.tiles AS tiles, c.xtiles AS xtiles, c.ytiles AS ytiles, c.tilesize AS tilesize, c.zoomlevel AS zoomlevel, c.has_addition AS has_additions, c.status_id as status_id,
   k.GD AS GD, k.PR AS PR, k.PP as PP, k.UN AS UN, k.SD AS SD, k.DTMx AS DTMx, k.DTMy AS DTMy, k.changed AS changed, k.changed_by AS changed_by,
   psw.latitude AS South, psw.longitude AS West, pne.latitude AS North, pne.longitude AS East,
 
