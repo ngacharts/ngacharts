@@ -15,7 +15,7 @@ class KAPHeader
   # Format version
   attr_accessor :ver
   # Copyright Record
-  attr_accessor :crr #
+  attr_accessor :crr
   
   # BSB   General Parameters
       
@@ -67,13 +67,13 @@ class KAPHeader
   # NTM   NTM Record    
   
   # NE - NTM Edition Number
-  attr_accessor :ntm_ne #
+  attr_accessor :ntm_ne
   # ND - NTM Date (3.4.2.6 Last update or NTM applied)
-  attr_accessor :ntm_nd #
+  attr_accessor :ntm_nd
   # BF - Base Flag
-  attr_accessor :ntm_bf #
+  attr_accessor :ntm_bf
   # BD - Base Date
-  attr_accessor :ntm_bd #
+  attr_accessor :ntm_bd
   
   # OST - Offset Values Section
   attr_accessor :ost
@@ -82,19 +82,19 @@ class KAPHeader
   # RGB - Default Color Palette (3.4.2.17.1  Colors used for daytime viewing)
   attr_accessor :rgb
   # DAY - Day Color Palette (3.4.2.17.1  Colors used for daytime viewing)
-  attr_accessor :day #
+  attr_accessor :day
   # DSK - Dusk Color Palette (3.4.2.17.2  Colors used for dusk and nighttime)
-  attr_accessor :dsk # 
+  attr_accessor :dsk
   # NGT - Night Color Palette (3.4.2.17.2  Colors used for dusk and nighttime)
-  attr_accessor :ngt #
+  attr_accessor :ngt
   # NGR - Night Red Palette
-  attr_accessor :ngr #
+  attr_accessor :ngr
   # GRY - ??? - undocumented palette
-  attr_accessor :gry #
+  attr_accessor :gry
   # PRC - ??? - undocumented palette
-  attr_accessor :prc #
+  attr_accessor :prc
   # PRG - ??? - undocumented palette
-  attr_accessor :prg #
+  attr_accessor :prg
 
   # REF - Reference Point Record (3.4.2.16  Mechanism to allow geographical positions to be converted to RNC (pixel) coordinates)
   # multiple records
@@ -105,25 +105,25 @@ class KAPHeader
   # Format:
   # WPX/2,863264.4957,11420.23114,-85.46756208,1.913941167,-0.4081181078
   #     0.7362163163
-  attr_accessor :wpx #
+  attr_accessor :wpx # TODO
   # PWX - Polynomial X to L
   # Format:
   # PWX/2,-76.48368342,8.999135076e-005,5.758392982e-009,-1.392859319e-012
   #     -2.377189159e-013,-3.432372134e-013
-  attr_accessor :pwx #
+  attr_accessor :pwx # TODO
   # WPY - Polynomial L to Y
   # Format:
   # WPY/2,390032.0953,69.56409751,-6745.589267,0.4669253601,0.0367153316
   #     -96.0547565
-  attr_accessor :wpy #
+  attr_accessor :wpy # TODO
   # PWY - Polynomial Y to L
   # Format:
   # PWY/2,37.44988807,-3.111799225e-009,-7.171936009e-005,2.694372983e-013
   #     -1.725045227e-014,-3.594145418e-011
-  attr_accessor :pwy #
+  attr_accessor :pwy # TODO
   # ERR - Error Record
   # Format: multiple records - ERR/1,0.0395099814,0.1453734568,0.0000106128,0.0000035393
-  attr_accessor :err #
+  attr_accessor :err # TODO
   # PLY - Border Polygon Record
   # multiple records
   attr_accessor :ply
@@ -137,34 +137,35 @@ class KAPHeader
   #     P3=NOT_APPLICABLE,P4=NOT_APPLICABLE,GC=NOT_APPLICABLE,RM=POLYNOMIAL
   
   #EC - ???
-  attr_accessor :knq_ec #
+  attr_accessor :knq_ec
   #GD - ???
-  attr_accessor :knq_gd #
+  attr_accessor :knq_gd
   #VC - ???
-  attr_accessor :knq_vc #
+  attr_accessor :knq_vc
   #SC - ???
-  attr_accessor :knq_sc #
+  attr_accessor :knq_sc
   #PC - ???
-  attr_accessor :knq_pc #
+  attr_accessor :knq_pc
   #P1 - ???
-  attr_accessor :knq_p1 #
+  attr_accessor :knq_p1
   #P2 - ???
-  attr_accessor :knq_p2 #
+  attr_accessor :knq_p2
   #P3 - ???
-  attr_accessor :knq_p3 #
+  attr_accessor :knq_p3
   #P4 - ???
-  attr_accessor :knq_p4 #
+  attr_accessor :knq_p4
   #GC - ???
-  attr_accessor :knq_gc #
+  attr_accessor :knq_gc
   #RM - ???
-  attr_accessor :knq_rm #
+  attr_accessor :knq_rm
 
   # Parses the string and finds the value for the key
-  def parse_key_value(header, key)
-    if(header.include?(key))
-      begidx = header.index(key) + key.length
-      endidx = header.index(/[,\n\r]/, begidx)
-    return header[begidx, endidx-begidx].strip
+  def parse_key_value(header, key, from, to)
+    hdr = header[from..to]
+    if(hdr.include?(key))
+      begidx = hdr.index(key) + key.length
+      endidx = hdr.index(/[,\n\r]/, begidx)
+      return hdr[begidx..(endidx - 1)]
     else
       return nil
     end
@@ -187,12 +188,27 @@ class KAPHeader
   # Parses the chart header text
   def readheader(header_text)
     @comment = String.new
+    @crr = String.new
     @ced_ref = Array.new
     @ply = Array.new
     @rgb = Array.new
+    @day = Array.new
+    @dsk = Array.new
+    @ngt = Array.new
+    @ngr = Array.new
+    @gry = Array.new
+    @prc = Array.new
+    @prg = Array.new
+    previous_was_crr = false
     header_text.each_line { |line|
       if (line.strip[0] == '!')
       @comment << line
+      end
+      if (line.index("CRR/") != nil || (previous_was_crr && line.start_with?("    ")))
+        @crr << line
+        previous_was_crr = true
+      else
+        previous_was_crr = false
       end
       if (line.index("REF") != nil)
         @ced_ref << REF.new(line)
@@ -200,50 +216,124 @@ class KAPHeader
       if (line.index("PLY") != nil)
         @ply << PLY.new(line)
       end
-      if (line.index("RGB") != nil)
-        rgb << RGB.new(line)
+      if (line.index("RGB/") != nil)
+        @rgb << Color.new(line)
+      end
+      if (line.index("DAY/") != nil)
+        @day << Color.new(line)
+      end
+      if (line.index("DSK/") != nil)
+        @dsk << Color.new(line)
+      end
+      if (line.index("NGT/") != nil)
+        @ngt << Color.new(line)
+      end
+      if (line.index("NGR/") != nil)
+        @ngr << Color.new(line)
+      end
+      if (line.index("GRY/") != nil)
+        @gry << Color.new(line)
+      end
+      if (line.index("PRC/") != nil)
+        @prc << Color.new(line)
+      end
+      if (line.index("PRG/") != nil)
+        @prg << Color.new(line)
       end
     }
 
-    @bsb_na = parse_key_value(header_text, "BSB/NA=")
-    @bsb_nu = parse_key_value(header_text, "NU=")
-
-    begidx = header_text.index("RA=") + "RA=".length
-    endidx = header_text.index(",", begidx)
-    endidx = header_text.index(",", endidx + 1)
-    @bsb_ra = header_text[begidx, endidx-begidx].split(',')
-
-    @bsb_du = parse_key_value(header_text, "DU=")
-    @knp_sc = parse_key_value(header_text, "KNP/SC=")
-    @knp_gd = parse_key_value(header_text, "GD=")
-    @knp_pr = parse_key_value(header_text, "PR=")
-    @knp_pp = parse_key_value(header_text, "PP=")
-    @knp_pi = parse_key_value(header_text, "PI=")
-
-    #Hard to say if it has 1 or 2 components... we don't even know what it is...
-    begidx = header_text.index("SP=") + "SP=".length
-    endidx = header_text.index(",", begidx)
-    endidx = header_text.index(",", endidx + 1)
-    if (endidx < header_text.index("=", begidx))
-      @knp_sp = header_text[begidx, endidx-begidx].split(',')
-    else
-      @knp_sp = Array.new
-      @knp_sp[0] = parse_key_value(header_text, "SP=")
+    bsb_start = header_text.index("BSB/")
+    if (bsb_start != nil)
+      bsb_end = header_text.index(/[A-Z]{3}\//, bsb_start + 4)
+      if (bsb_end == nil)
+        bsb_end = header_text.length
+      end
+      @bsb_na = parse_key_value(header_text, "NA=", bsb_start, bsb_end)
+      @bsb_nu = parse_key_value(header_text, "NU=", bsb_start, bsb_end)
+      begidx = header_text.index("RA=", bsb_start) + "RA=".length
+      endidx = header_text.index(",", begidx)
+      endidx = header_text.index(",", endidx + 1)
+      @bsb_ra = header_text[begidx, endidx-begidx].split(',')
+      @bsb_du = parse_key_value(header_text, "DU=", bsb_start, bsb_end)
     end
-
-    @knp_ta = parse_key_value(header_text, "TA=")
-    @knp_sk = parse_key_value(header_text, "SK=")
-    @knp_un = parse_key_value(header_text, "UN=")
-    @knp_sd = parse_key_value(header_text, "SD=")
-    @knp_dx = parse_key_value(header_text, "DX=")
-    @knp_dy = parse_key_value(header_text, "DY=")
-    @ced_se = parse_key_value(header_text, "SE=")
-    @ced_re = parse_key_value(header_text, "RE=")
-    @ced_ed = parse_key_value(header_text, "ED=")
-    @ver = parse_key_value(header_text, "VER/")
-    @ost = parse_key_value(header_text, "OST/")
-    @ifm = parse_key_value(header_text, "IFM/")
-    @cph = parse_key_value(header_text, "CPH/")
+    
+    knp_start = header_text.index("KNP/")
+    if (knp_start != nil)
+      knp_end = header_text.index(/[A-Z]{3}\//, knp_start + 4)
+      if (knp_end == nil)
+        knp_end = header_text.length
+      end
+      @knp_sc = parse_key_value(header_text, "SC=", knp_start, knp_end)
+      @knp_gd = parse_key_value(header_text, "GD=", knp_start, knp_end)
+      @knp_pr = parse_key_value(header_text, "PR=", knp_start, knp_end)
+      @knp_pp = parse_key_value(header_text, "PP=", knp_start, knp_end)
+      @knp_pi = parse_key_value(header_text, "PI=", knp_start, knp_end)
+  
+      #Hard to say if it has 1 or 2 components... we don't even know what it is...
+      begidx = header_text.index("SP=", knp_start) + "SP=".length
+      endidx = header_text.index(",", begidx)
+      endidx = header_text.index(",", endidx + 1)
+      if (endidx < header_text.index("=", begidx))
+        @knp_sp = header_text[begidx, endidx-begidx].split(',')
+      else
+        @knp_sp = Array.new
+        @knp_sp[0] = parse_key_value(header_text, "SP=", knp_start, knp_end)
+      end
+  
+      @knp_ta = parse_key_value(header_text, "TA=", knp_start, knp_end)
+      @knp_sk = parse_key_value(header_text, "SK=", knp_start, knp_end)
+      @knp_un = parse_key_value(header_text, "UN=", knp_start, knp_end)
+      @knp_sd = parse_key_value(header_text, "SD=", knp_start, knp_end)
+      @knp_dx = parse_key_value(header_text, "DX=", knp_start, knp_end)
+      @knp_dy = parse_key_value(header_text, "DY=", knp_start, knp_end)
+    end
+    
+    knq_start = header_text.index("KNQ/")
+    if (knq_start != nil)
+      knq_end = header_text.index(/[A-Z]{3}\//, knq_start + 4)
+      if (knq_end == nil)
+        knq_end = header_text.length
+      end
+      @knq_ec = parse_key_value(header_text, "EC=", knq_start, knq_end)
+      @knq_gd = parse_key_value(header_text, "GD=", knq_start, knq_end)
+      @knq_vc = parse_key_value(header_text, "VC=", knq_start, knq_end)
+      @knq_sc = parse_key_value(header_text, "SC=", knq_start, knq_end)
+      @knq_pc = parse_key_value(header_text, "PC=", knq_start, knq_end)
+      @knq_p1 = parse_key_value(header_text, "P1=", knq_start, knq_end)
+      @knq_p2 = parse_key_value(header_text, "P2=", knq_start, knq_end)
+      @knq_p3 = parse_key_value(header_text, "P3=", knq_start, knq_end)
+      @knq_p4 = parse_key_value(header_text, "P4=", knq_start, knq_end)
+      @knq_gc = parse_key_value(header_text, "GC=", knq_start, knq_end)
+      @knq_rm = parse_key_value(header_text, "RM=", knq_start, knq_end)
+    end
+    
+    ced_start = header_text.index("CED/")
+    if (ced_start != nil)
+      ced_end = header_text.index(/[A-Z]{3}\//, ced_start + 4)
+      if (ced_end == nil)
+        ced_end = header_text.length
+      end
+      @ced_se = parse_key_value(header_text, "SE=", ced_start, ced_end)
+      @ced_re = parse_key_value(header_text, "RE=", ced_start, ced_end)
+      @ced_ed = parse_key_value(header_text, "ED=", ced_start, ced_end)
+    end
+    
+    ntm_start = header_text.index("NTM/")
+    if (ntm_start != nil)
+      ntm_end = header_text.index(/[A-Z]{3}\//, ntm_start + 4)
+      if (ntm_end == nil)
+        ntm_end = header_text.length
+      end
+      @ntm_ne = parse_key_value(header_text, "NE=", ntm_start, ntm_end)
+      @ntm_nd = parse_key_value(header_text, "ND=", ntm_start, ntm_end)
+      @ntm_bf = parse_key_value(header_text, "BF=", ntm_start, ntm_end)
+      @ntm_bd = parse_key_value(header_text, "BD=", ntm_start, ntm_end)
+    end
+    
+    @ver = parse_key_value(header_text, "VER/", 0, header_text.length)
+    @ost = parse_key_value(header_text, "OST/", 0, header_text.length)
+    @ifm = parse_key_value(header_text, "IFM/", 0, header_text.length)
+    @cph = parse_key_value(header_text, "CPH/", 0, header_text.length)
 
     if(header_text.include?("DTM/"))
       begidx = header_text.index("DTM/") + "DTM/".length
@@ -256,7 +346,14 @@ class KAPHeader
   # Returns formatted header text
   def to_s
     str = String.new
-    str << @comment << "\n"
+    str << @comment
+    if (!@comment.end_with?("\n")) 
+      str << "\n"
+    end
+    str << "CRR/#{@crr}"
+    if (!@crr.end_with?("\n")) 
+      str << "\n"
+    end
     str << "VER/#{@ver}" << "\n"
     str << "BSB/NA=#{@bsb_na}" << "\n"
     str << "    NU=#{@bsb_nu}"
@@ -282,6 +379,20 @@ class KAPHeader
     str << ",DX=#{@knp_dx}"
     str << ",DY=#{@knp_dy}"
     str << "\n"
+    str << "KNQ/EC=#{@knq_ec}"
+    str << ",GD=#{@knq_gd}"
+    str << ",VC=#{@knq_vc}"
+    str << "\n"
+    str << "    SC=#{@knq_sc}"
+    str << ",PC=#{@knq_pc}"
+    str << ",P1=#{@knq_p1}"
+    str << "\n"
+    str << "    P2=#{@knq_p2}"
+    str << ",P3=#{@knq_p3}"
+    str << ",P4=#{@knq_p4}"
+    str << ",GC=#{@knq_gc}"
+    str << ",RM=#{@knq_rm}"
+    str << "\n"
     str << "CED/SE=#{@ced_se}"
     str << ",RE=#{@ced_re}"
     str << ",ED=#{@ced_ed}"
@@ -306,6 +417,27 @@ class KAPHeader
     end
     @rgb.each {|rgb|
       str << rgb.to_s << "\n"
+    }
+    @day.each {|day|
+      str << day.to_s << "\n"
+    }
+    @dsk.each {|dsk|
+      str << dsk.to_s << "\n"
+    }
+    @ngt.each {|ngt|
+      str << ngt.to_s << "\n"
+    }
+    @ngr.each {|ngr|
+      str << ngr.to_s << "\n"
+    }
+    @gry.each {|gry|
+      str << gry.to_s << "\n"
+    }
+    @prc.each {|prc|
+      str << prc.to_s << "\n"
+    }
+    @prg.each {|prg|
+      str << prg.to_s << "\n"
     }
     str
   end
@@ -374,7 +506,10 @@ end
 
 
 # This class represents a color from the KAP's color table
-class RGB
+class Color
+  # Color table
+  # Can be: RGB, DAY, DSK, NGT, NGR, GRY, PRC, PRG 
+  attr_accessor :ct
   # Color index
   attr_accessor :idx
   # Red color value (0-255)
@@ -385,7 +520,9 @@ class RGB
   attr_accessor :blue
   # Constructor, creates the object from the header text line
   def initialize(rgb_line)
-    fields = rgb_line.rstrip.split('/')[1].split(',')
+    fields = rgb_line.rstrip.split('/')
+    @ct = fields[0]
+    fields = fields[1].split(',')
     @idx = fields[0]
     @ced_red = fields[1]
     @green = fields[2]
@@ -394,7 +531,7 @@ class RGB
 
   # Returns formatted text for the header
   def to_s
-    "RGB/#{@idx},#{@ced_red},#{@green},#{@blue}"
+    "#{@ct}/#{@idx},#{@ced_red},#{@green},#{@blue}"
   end
 end
 

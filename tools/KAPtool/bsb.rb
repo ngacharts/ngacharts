@@ -5,26 +5,36 @@
 # Copyright:: Copyright (c) 2011 Pavel Kalian
 # License::   Distributes under the terms of GPLv2 or later
 
-# This class holds the BSB header information<br/>
-# The chapter numbers refer to IHO standard document S-61: http://88.208.211.37/iho_pubs/standard/S61E.pdf<br/>
-# The state copies the information for BSB Version 3.0, as described documents available from http://88.208.211.37/iho_pubs/standard/S-64_Edition_1-1/RNC_Test_Data_Sets/BSB_TDS/BSB_TDS.htm<br/>
-# The header can also contain following type of records:<br/>
-# N000005580001/RT=N,KN=12221_1,CA=CAUTION,DE=NOTICE TO MARINERS,P1=1028,8940<br/>
-#    P2=1028,9112,P3=1974,9112,P4=1974,8940
+# This class holds the BSB header information
+# * The chapter numbers refer to IHO standard document S-61: http://88.208.211.37/iho_pubs/standard/S61E.pdf
+# * The state copies the information for BSB Version 3.0, as described documents available from http://88.208.211.37/iho_pubs/standard/S-64_Edition_1-1/RNC_Test_Data_Sets/BSB_TDS/BSB_TDS.htm
+# * The header can also contain following type of records:
+# <tt>
+#   N000005580001/RT=N,KN=12221_1,CA=CAUTION,DE=NOTICE TO MARINERS,P1=1028,8940
+#       P2=1028,9112,P3=1974,9112,P4=1974,8940
+# </tt>
 class BSB
   # File comment, lines starting with ! 
   attr_accessor :comment
   # Format version
   attr_accessor :ver
   
-  #CHT - General parameters
+  # CHT - General parameters
   
   # Chart name (3.4.2.2 RNC Name) - can't contain commas
   attr_accessor :cht_na
   # Chart number (3.4.2.2 RNC number)
   attr_accessor :cht_nu
   # Chart format
-  # Possible values: COASTAL, HARBOR, GENERAL (more?)
+  # Possible values (may be more comma separated): 
+  # - COASTAL
+  # - HARBOR
+  # - GENERAL
+  # - SAILING
+  # - INTERNATIONAL
+  # - SMALL CRAFT ROUTE
+  # - IWW ROUTE 
+  # - (more?)
   attr_accessor :chf
   
   # CED   Edition Parameters
@@ -61,11 +71,11 @@ class BSB
   
   # Observed in BSB files collected, but missing in the available documentation
 
-  # ?Chart geodetic datum? (observed value is number like 0 or 5)
+  # ?Chart geodetic datum? (observed value is number or more comma separated numbers, most often 0, but values like 11,13,14,17 also observed) In some files 'Unknown' is used
   attr_accessor :cgd
   # Certificate of authenticity - multi-line text
   attr_accessor :crr
-  # ?Region? (observed values are comma separated numbers like 4,6)
+  # ?Region? Not seen very often (observed values are comma separated numbers like 4,6,36)
   attr_accessor :rgn
   
   # Parses the string and finds the value for the key
