@@ -78,6 +78,10 @@ class BSB
   # ?Region? Not seen very often (observed values are comma separated numbers like 4,6,36)
   attr_accessor :rgn
   
+  def initialize
+    @kap = Array.new
+  end
+  
   # Parses the string and finds the value for the key
   def parse_key_value(header, key)
     if(header.include?(key))
@@ -227,9 +231,9 @@ class KAPinfo
       return default
     end
   end
-  
+    
   # Constructor
-  def initialize(kap_line)
+  def load(kap_line)
     fields = kap_line.rstrip.split("/")
     @idx = fields[0].sub("K", "")
     read(fields[1])
@@ -237,20 +241,22 @@ class KAPinfo
   
   # Reads the chart parameters
   def read(text)
-    @cht_na = parse_key_value(text, "NA=", @cht_na)
-    @cht_nu = parse_key_value(text, "NU=", @cht_nu)
+    @na = parse_key_value(text, "NA=", @cht)
+    @nu = parse_key_value(text, "NU=", @cht)
     @ty = parse_key_value(text, "TY=", @ty)
     @fn = parse_key_value(text, "FN=", @fn)
   end
   
   # Formats the chart info for the file
   def to_s
-    "K#{@idx}/NA=#{@cht_na},NU=#{@cht_nu}\n    TY=#{@ty},FN=#{@fn}"
+    "K#{@idx}/NA=#{@na}\n    NU=#{@nu},TY=#{@ty},FN=#{@fn}"
   end
 end
 
-bsb = BSB.new
-bsb.read("!Copyright 1999, Maptech Inc.  All Rights Reserved.
+# For testing - parses a file from the RNC testing dataset and prints out the result
+def bsb_test
+  bsb = BSB.new
+  bsb.read("!Copyright 1999, Maptech Inc.  All Rights Reserved.
 CRR/CERTIFICATE OF AUTHENTICITY
     This electronic chart was produced under the authority of the National
     Oceanic and Atmospheric Administration (NOAA).  NOAA is the hydrographic
@@ -272,4 +278,5 @@ MFR/MAPTECH
 RGN/4,6
 K01/NA=CHESAPEAKE BAY ENTRANCE,NU=558,TY=BASE,FN=12221_1.KAP")
     
-puts bsb
+  puts bsb
+end

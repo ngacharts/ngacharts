@@ -4,7 +4,13 @@
 # Copyright:: Copyright (c) 2011 Pavel Kalian
 # License::   Distributes under the terms of GPLv2 or later
 
-#require "mysql"
+require "Mysql"
+require "./bsb.rb"
+
+$db_host = "127.0.0.1"
+$db_database = "nga"
+$db_username = "root"
+$db_password = "root"
 
 # This class represents the KAP chart header<br/>
 # The chapter numbers refer to IHO standard document S-61: http://88.208.211.37/iho_pubs/standard/S61E.pdf<br/>
@@ -101,27 +107,27 @@ class KAPHeader
   attr_accessor :ref
   # CPH - Phase Shift Value
   attr_accessor :cph
-  # WPX - Polynomial L to X
-  # Format:
+  # TODO: WPX - Polynomial L to X
+  # Format:<br/>
   # WPX/2,863264.4957,11420.23114,-85.46756208,1.913941167,-0.4081181078
   #     0.7362163163
   attr_accessor :wpx # TODO
-  # PWX - Polynomial X to L
+  # TODO: PWX - Polynomial X to L
   # Format:
   # PWX/2,-76.48368342,8.999135076e-005,5.758392982e-009,-1.392859319e-012
   #     -2.377189159e-013,-3.432372134e-013
   attr_accessor :pwx # TODO
-  # WPY - Polynomial L to Y
+  # TODO: WPY - Polynomial L to Y
   # Format:
   # WPY/2,390032.0953,69.56409751,-6745.589267,0.4669253601,0.0367153316
   #     -96.0547565
   attr_accessor :wpy # TODO
-  # PWY - Polynomial Y to L
+  # TODO: PWY - Polynomial Y to L
   # Format:
   # PWY/2,37.44988807,-3.111799225e-009,-7.171936009e-005,2.694372983e-013
   #     -1.725045227e-014,-3.594145418e-011
   attr_accessor :pwy # TODO
-  # ERR - Error Record
+  # TODO: ERR - Error Record
   # Format: multiple records - ERR/1,0.0395099814,0.1453734568,0.0000106128,0.0000035393
   attr_accessor :err # TODO
   # PLY - Border Polygon Record
@@ -158,6 +164,22 @@ class KAPHeader
   attr_accessor :knq_gc
   #RM - ???
   attr_accessor :knq_rm
+  
+  # Default initializer
+  def initialize
+    @comment = String.new
+    @crr = String.new
+    @ref = Array.new
+    @ply = Array.new
+    @rgb = Array.new
+    @day = Array.new
+    @dsk = Array.new
+    @ngt = Array.new
+    @ngr = Array.new
+    @gry = Array.new
+    @prc = Array.new
+    @prg = Array.new
+  end
 
   # Parses the string and finds the value for the key
   def parse_key_value(header, key, from, to)
@@ -173,7 +195,7 @@ class KAPHeader
   
   # Checks the data for correctness
   def check
-    if (@ced_ref.count < 4)
+    if (@ref.count < 4)
       puts "Not enough REF points"
     end
     if (@ply.length != 0 && @ply.legth < 4)
@@ -187,18 +209,6 @@ class KAPHeader
 
   # Parses the chart header text
   def readheader(header_text)
-    @comment = String.new
-    @crr = String.new
-    @ced_ref = Array.new
-    @ply = Array.new
-    @rgb = Array.new
-    @day = Array.new
-    @dsk = Array.new
-    @ngt = Array.new
-    @ngr = Array.new
-    @gry = Array.new
-    @prc = Array.new
-    @prg = Array.new
     previous_was_crr = false
     header_text.each_line { |line|
       if (line.strip[0] == '!')
@@ -211,7 +221,7 @@ class KAPHeader
         previous_was_crr = false
       end
       if (line.index("REF") != nil)
-        @ced_ref << REF.new(line)
+        @ref << REF.new(line)
       end
       if (line.index("PLY") != nil)
         @ply << PLY.new(line)
@@ -346,68 +356,80 @@ class KAPHeader
   # Returns formatted header text
   def to_s
     str = String.new
-    str << @comment
-    if (!@comment.end_with?("\n")) 
+    if (!@comment.empty?)
+      str << @comment
+      if (!@comment.end_with?("\n")) 
+        str << "\n"
+      end
+    end
+    if (@crr != nil && !@crr.empty?)
+      str << "CRR/#{@crr}"
+      if (!@crr.end_with?("\n")) 
+        str << "\n"
+      end
+    end
+    if (@ver != nil && !@ver.empty?) then str << "VER/#{@ver}" << "\n" end
+    if (@bsb_na != nil && !@bsb_na.empty?)
+      str << "BSB/NA=#{@bsb_na}" << "\n"
+      str << "    NU=#{@bsb_nu}"
+      str << ",RA=#{@bsb_ra[0]},#{@bsb_ra[1]}"
+      str << ",DU=#{@bsb_du}"
       str << "\n"
     end
-    str << "CRR/#{@crr}"
-    if (!@crr.end_with?("\n")) 
+    if (@knp_sc != nil && !@knp_sc.empty?)
+      str << "KNP/SC=#{@knp_sc}"
+      str << ",GD=#{@knp_gd}"
+      str << ",PR=#{@knp_pr}"
+      str << "\n"
+      str << "    PP=#{sprintf('%.1f', @knp_pp)}"
+      str << ",PI=#{@knp_pi}"
+      if(@knp_sp.length == 2)
+        str << ",SP=#{@knp_sp[0]},#{@knp_sp[1]}"
+      else
+        str << ",SP=#{@knp_sp[0]}"
+      end
+      str << ",SK=#{@knp_sk}"
+      str << ",TA=#{@knp_ta}"
+      str << "\n"
+      str << "    UN=#{@knp_un}"
+      str << ",SD=#{@knp_sd}"
+      str << ",DX=#{@knp_dx}"
+      str << ",DY=#{@knp_dy}"
       str << "\n"
     end
-    str << "VER/#{@ver}" << "\n"
-    str << "BSB/NA=#{@bsb_na}" << "\n"
-    str << "    NU=#{@bsb_nu}"
-    str << ",RA=#{@bsb_ra[0]},#{@bsb_ra[1]}"
-    str << ",DU=#{@bsb_du}"
-    str << "\n"
-    str << "KNP/SC=#{@knp_sc}"
-    str << ",GD=#{@knp_gd}"
-    str << ",PR=#{@knp_pr}"
-    str << "\n"
-    str << "    PP=#{@knp_pp}"
-    str << ",PI=#{@knp_pi}"
-    if(@knp_sp.length == 2)
-      str << ",SP=#{@knp_sp[0]},#{@knp_sp[1]}"
-    else
-      str << ",SP=#{@knp_sp[0]}"
+    if (@knq_ec != nil && !@knq_ec.empty?)
+      str << "KNQ/EC=#{@knq_ec}"
+      str << ",GD=#{@knq_gd}"
+      str << ",VC=#{@knq_vc}"
+      str << "\n"
+      str << "    SC=#{@knq_sc}"
+      str << ",PC=#{@knq_pc}"
+      str << ",P1=#{@knq_p1}"
+      str << "\n"
+      str << "    P2=#{@knq_p2}"
+      str << ",P3=#{@knq_p3}"
+      str << ",P4=#{@knq_p4}"
+      str << ",GC=#{@knq_gc}"
+      str << ",RM=#{@knq_rm}"
+      str << "\n"
     end
-    str << ",SK=#{@knp_sk}"
-    str << ",TA=#{@knp_ta}"
-    str << "\n"
-    str << "    UN=#{@knp_un}"
-    str << ",SD=#{@knp_sd}"
-    str << ",DX=#{@knp_dx}"
-    str << ",DY=#{@knp_dy}"
-    str << "\n"
-    str << "KNQ/EC=#{@knq_ec}"
-    str << ",GD=#{@knq_gd}"
-    str << ",VC=#{@knq_vc}"
-    str << "\n"
-    str << "    SC=#{@knq_sc}"
-    str << ",PC=#{@knq_pc}"
-    str << ",P1=#{@knq_p1}"
-    str << "\n"
-    str << "    P2=#{@knq_p2}"
-    str << ",P3=#{@knq_p3}"
-    str << ",P4=#{@knq_p4}"
-    str << ",GC=#{@knq_gc}"
-    str << ",RM=#{@knq_rm}"
-    str << "\n"
-    str << "CED/SE=#{@ced_se}"
-    str << ",RE=#{@ced_re}"
-    str << ",ED=#{@ced_ed}"
-    str << "\n"
-    str << "CPH/#{@cph}\n"
-    str << "OST/#{@ost}\n"
-    str << "IFM/#{@ifm}\n"
+    if (@ced_se != nil && !@ced_se.empty?)
+      str << "CED/SE=#{@ced_se}"
+      str << ",RE=#{@ced_re}"
+      str << ",ED=#{@ced_ed}"
+      str << "\n"
+    end
+    if (@cph != nil && !@cph.empty?) then str << "CPH/#{@cph}\n" end
+    if (@ost != nil) then str << "OST/#{@ost}\n" end
+    if (@ifm != nil) then str << "IFM/#{@ifm}\n" end
     if (dtm != nil)
       str << "DTM/#{@dtm[0]},#{@dtm[1]}\n"
     end
-    @ced_ref.each {|ref|
+    @ref.each {|ref|
       str << ref.to_s << "\n"
     }
     if (@ply.length == 0)
-      @ced_ref.each{|point|
+      @ref.each{|point|
         str << point.to_PLY.to_s << "\n"
         }
       else
@@ -457,8 +479,9 @@ class REF
   attr_accessor :latitude
   # Longitude of the point
   attr_accessor :longitude
-  # Constructor, creating the object from the textual representation of the point in the chart header
-  def initialize(ref_line)
+  
+  # Creating the object from the textual representation of the point in the chart header
+  def read(ref_line)
     fields = ref_line.rstrip.split('/')[1].split(',')
     @idx = fields[0]
     @x = fields[1]
@@ -469,12 +492,13 @@ class REF
 
   # Returns formatted text for the header
   def to_s
-    "REF/#{@idx},#{@x},#{@y},#{@latitude},#{@longitude}"
+    "REF/#{@idx},#{@x},#{@y},#{sprintf('%.8f', @latitude)},#{sprintf('%.8f', @longitude)}"
   end
   
   # Returns the point converted to PLY point
   def to_PLY
-    ply = PLY.new("PLY/#{@idx},#{@latitude},#{@longitude}")
+    ply = PLY.new
+    ply.read("PLY/#{@idx},#{@latitude},#{@longitude}")
     return ply
   end
 end
@@ -489,8 +513,9 @@ class PLY
   attr_accessor :latitude
   # Longitude of the point
   attr_accessor :longitude
-  # Constructor, creating the object from the textual representation of the point in the chart header
-  def initialize(ply_line)
+  
+  # Creating the object from the textual representation of the point in the chart header
+  def read(ply_line)
     fields = ply_line.rstrip.split('/')[1].split(',')
     @idx = fields[0]
     @latitude = fields[1]
@@ -499,11 +524,9 @@ class PLY
 
   # Returns formatted text for the header
   def to_s
-    "PLY/#{@idx},#{@latitude},#{@longitude}"
+    "PLY/#{@idx},#{sprintf('%.8f', @latitude)},#{sprintf('%.8f', @longitude)}"
   end
 end
-
-
 
 # This class represents a color from the KAP's color table
 class Color
@@ -518,8 +541,9 @@ class Color
   attr_accessor :green
   # Blue color value (0-255)
   attr_accessor :blue
-  # Constructor, creates the object from the header text line
-  def initialize(rgb_line)
+  
+  # Creates the object from the header text line
+  def read(rgb_line)
     fields = rgb_line.rstrip.split('/')
     @ct = fields[0]
     fields = fields[1].split(',')
@@ -535,8 +559,140 @@ class Color
   end
 end
 
-kap = KAPHeader.new
-kap.readheader("!Copyright 1999, Maptech Inc.  All Rights Reserved.
+# This class represents a single paper chart
+class Chart
+  # Chart number
+  attr_accessor :number
+  # BSB file representing the chart
+  attr_accessor :bsb
+  # array of KAPs representing the chart
+  attr_accessor :kaps
+  
+  # Default constructor
+  def initialize
+    @kaps = Array.new
+  end
+  
+  # Loads the chart from the database
+  # TODO: Now it simplifies everything for testing and has to be rewritten for real world use
+  def load_from_db #TODO - now we load it simply for phase 1 - from the view, has to be redone to actually work well
+    res = $dbh.query("SELECT * FROM ocpn_nga_charts_with_params WHERE number=#{@number}")
+
+    while row = res.fetch_hash do
+      @bsb = BSB.new
+      @bsb.comment = "!This chart originates from
+!http://www.nauticalcharts.noaa.gov/mcd/OnLineViewer.html
+!DO NOT USE FOR NAVIGATION
+!Use official, full scale nautical charts for real-world navigation.
+!These are available from authorized nautical chart sales agents.
+!Screen captures of the charts available here do NOT fulfill chart
+!carriage requirements for regulated commercial vessels under
+!Titles 33 and 46 of the Code of Federal Regulations."
+      @bsb.ver = "3.0"
+      @bsb.crr = "This chart is released by the OpenCPN.info - NGA chart project."
+      @bsb.cht_na = row["title"]
+      @bsb.cht_nu = row["number"]
+      @bsb.chf = row["bsb_chf"]
+      @bsb.org = "NGA"
+      @bsb.mfr = "NGA chart project"
+      @bsb.cgd = 0
+      @bsb.ced_se = row["edition"]
+      @bsb.ced_re = 1
+      @bsb.ced_ed = 1
+      
+      ki = KAPinfo.new
+      ki.idx = @bsb.kap.length + 1
+      ki.na = row["title"]
+      ki.nu = row["number"]
+      ki.ty = row["bsb_type"]
+      ki.fn = row["number"] + ".kap"
+      @bsb.kap << ki
+      @bsb.chk = @bsb.kap.length
+      
+      kap = KAPHeader.new
+      kap.comment = "!This chart originates from
+!http://www.nauticalcharts.noaa.gov/mcd/OnLineViewer.html
+!DO NOT USE FOR NAVIGATION
+!Use official, full scale nautical charts for real-world navigation.
+!These are available from authorized nautical chart sales agents.
+!Screen captures of the charts available here do NOT fulfill chart
+!carriage requirements for regulated commercial vessels under
+!Titles 33 and 46 of the Code of Federal Regulations."
+      kap.ver = "3.0"
+      kap.crr = "This chart is released by the OpenCPN.info - NGA chart project."
+      kap.bsb_na = row["title"]
+      kap.bsb_nu = row["number"]
+      kap.bsb_ra = [row["width"], row["height"]]
+      kap.bsb_du = 72
+      
+      kap.ced_se = row["edition"]
+      kap.ced_re = 1 #TODO - parameter of our process
+      kap.ced_ed = 1 #TODO - parameter of our process
+      
+      kap.knp_sc = row["scale"]
+      kap.knp_gd = row["GD"]
+      kap.knp_pr = row["PR"]
+      kap.knp_pp = row["PP"]
+      kap.knp_pi = "UNKNOWN"
+      kap.knp_sk = 0.0 #TODO
+      kap.knp_ta = nil
+      kap.knp_un = row["un"]
+      kap.knp_sd = row["sd"]
+      kap.knp_dx = nil
+      kap.knp_dy = nil
+      kap.knp_sp = "UNKNOWN"
+
+      kap.dtm = [-1 * row["DTMx"].to_f * 60, -1 * row["DTMy"].to_f * 60]
+      kap.ifm = 5 #TODO - parameter of our process
+      kap.ost = 1
+      
+      sw = REF.new
+      sw.idx = 1
+      sw.x = row["Xsw"]
+      sw.y = row["Ysw"]
+      sw.latitude = row["South"]
+      sw.longitude = row["West"]
+      kap.ref << sw
+      kap.ply << sw.to_PLY
+      
+      nw = REF.new
+      nw.idx = 2
+      nw.x = row["Xnw"]
+      nw.y = row["Ynw"]
+      nw.latitude = row["North"]
+      nw.longitude = row["West"]
+      kap.ref << nw
+      kap.ply << nw.to_PLY
+      
+      ne = REF.new
+      ne.idx = 3
+      ne.x = row["Xne"]
+      ne.y = row["Yne"]
+      ne.latitude = row["North"]
+      ne.longitude = row["East"]
+      kap.ref << ne
+      kap.ply << ne.to_PLY
+      
+      se = REF.new
+      se.idx = 4
+      se.x = row["Xse"]
+      se.y = row["Yse"]
+      se.latitude = row["South"]
+      se.longitude = row["East"]
+      kap.ref << se
+      kap.ply << se.to_PLY
+      
+      @kaps << kap
+    end
+
+    res.free
+  end
+end
+
+# For testing - parses a header from the RNC testing dataset and prints out the result
+def kap_test
+  kap = KAPHeader.new
+  kap.readheader("!Copyright 1999, Maptech Inc.  All Rights Reserved.
 CRR/CERTIFICATE OF AUTHENTICITY
     This electronic chart was produced under the authority of the National
     Oceanic and Atmospheric Administration (NOAA).  NOAA is the hydrographic
@@ -823,4 +979,26 @@ ERR/66,0.1097938997,0.1790129063,0.0000132479,0.0000098418
 ERR/67,0.0599992857,0.3174913101,0.0000222359,0.0000053816
 ERR/68,0.2066622965,0.3109975002,0.0000217692,0.0000185522")
 
-puts kap
+  puts kap
+end
+
+begin
+  # connect to the MySQL server
+  $dbh = Mysql.connect($db_host, $db_username, $db_password, $db_database)
+  # get server version string and display it
+  #puts "Server version: " + $dbh.get_server_info
+  
+  chart = Chart.new
+  chart.number = 37112
+  chart.load_from_db
+  #puts chart.bsb
+  puts chart.kaps[0] 
+  
+rescue Mysql::Error => e
+  puts "Error code: #{e.errno}"
+  puts "Error message: #{e.error}"
+  puts "Error SQLSTATE: #{e.sqlstate}" if e.respond_to?("sqlstate")
+ensure
+  # disconnect from server
+  $dbh.close if $dbh
+end
