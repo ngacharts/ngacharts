@@ -355,8 +355,6 @@ class KAPHeader
   # Set GD to the appropriate value
   # TODO: Is this correct
   def compute_gd
-    puts @dtm.inspect
-    puts @dtm_dat.inspect
     if (@dtm_dat != nil && @dtm != nil)
       @knp_gd = @dtm_dat
     end
@@ -518,7 +516,7 @@ class KAPHeader
     if (@ost != nil) then str << "OST/#{@ost}\n" end
     if (@ifm != nil) then str << "IFM/#{@ifm}\n" end
     if (dtm != nil)
-      str << "DTM/#{@dtm[0]},#{@dtm[1]}\n"
+      str << "DTM/#{sprintf("%.1f", @dtm[0])},#{sprintf("%.1f", @dtm[1])}\n"
     end
     @ref.each {|ref|
       str << ref.to_s << "\n"
@@ -745,7 +743,7 @@ class Chart
       kap.knp_sd = row["SD"]
       kap.knp_sp = "UNKNOWN"
 
-      kap.dtm = [-1 * row["DTMx"].to_f * 60, -1 * row["DTMy"].to_f * 60] #convert to seconds and reverse the sign
+      kap.dtm = [-1 * row["DTMy"].to_f * 60, -1 * row["DTMx"].to_f * 60] #convert to seconds and reverse the sign
       if (kap.dtm[0] == -0.0) then kap.dtm[0] = 0.0 end
       if (kap.dtm[1] == -0.0) then kap.dtm[1] = 0.0 end
       kap.dtm_dat = row["DTMdat"]
