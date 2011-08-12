@@ -133,6 +133,8 @@ class KAPHeader
   # DTM - Datum Shift Record (3.4.2.12  Horizontal datum shift to WGS84)
   # Format: Two comma separated numbers
   attr_accessor :dtm
+  # DTM datum - the datum to which the shift is related (normally WGS84, sometimes WGS72 etc.)
+  attr_accessor :dtm_dat
   
   # KNQ - Observed, but not documented anywhere
   # Format:
@@ -350,6 +352,16 @@ class KAPHeader
     end
   end
   
+  # Set GD to the appropriate value
+  # TODO: Is this correct
+  def compute_gd
+    puts @dtm.inspect
+    puts @dtm_dat.inspect
+    if (@dtm_dat != nil && @dtm != nil)
+      @knp_gd = @dtm_dat
+    end
+  end
+  
   # Calculates the value for KNP/PP in case it was not given on the chart 
   # TODO: Are we going to handle it for more projections?
   def compute_pp
@@ -358,6 +370,26 @@ class KAPHeader
     end
     if (@knp_pr == "TRANSVERSE MERCATOR")
       @knp_pp = (min_lon + max_lon) / 2
+    end
+  end
+  
+  # Does the chart pass the date line? if so, CHP has to be 180.0, otherwise 0.0
+  def compute_cph
+    #search for the leftmost and rightmost ref and compare
+    leftmost = @ref[0]
+    rightmost = @ref[0]
+    @ref.each{|ref|
+      if ref.x < rightmost.x
+        rightmost = ref
+      end
+      if ref.x > leftmost.x
+        leftmost = ref
+      end
+      }
+    if (leftmost.longitude > rightmost.longitude)
+      @cph = 180.0.to_s
+    else
+      @cph = 0.0.to_s
     end
   end
   
@@ -703,19 +735,20 @@ class Chart
       kap.ced_ed = 1 #TODO - parameter of our process
       
       kap.knp_sc = row["scale"]
-      kap.knp_gd = row["GD"]
+      kap.knp_gd = row["GD"] # should be used in case we don't have a datum for plotting available - it's handled by compute_gd later
       kap.knp_pr = row["PR"]
       kap.knp_pp = row["PP"]
       kap.knp_pi = "UNKNOWN"
       kap.knp_sk = 0.0 #TODO - generally we do not want the skewed charts, but...
-      kap.knp_ta = nil
+      kap.knp_ta = 90.0 # probably true for all the charts 
       kap.knp_un = row["UN"]
       kap.knp_sd = row["SD"]
       kap.knp_sp = "UNKNOWN"
 
-      kap.dtm = [-1 * row["DTMx"].to_f * 60, -1 * row["DTMy"].to_f * 60]
+      kap.dtm = [-1 * row["DTMx"].to_f * 60, -1 * row["DTMy"].to_f * 60] #convert to seconds and reverse the sign
       if (kap.dtm[0] == -0.0) then kap.dtm[0] = 0.0 end
       if (kap.dtm[1] == -0.0) then kap.dtm[1] = 0.0 end
+      kap.dtm_dat = row["DTMdat"]
       kap.ifm = 5 #TODO - parameter of our process
       kap.ost = 1
       
@@ -756,6 +789,8 @@ class Chart
       kap.ply << se.to_PLY
       
       if (kap.knp_pp == nil) then kap.compute_pp end
+      kap.compute_cph
+      kap.compute_gd
       kap.compute_dxdy
       
       @kaps << kap

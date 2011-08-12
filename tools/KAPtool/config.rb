@@ -22,16 +22,16 @@ $db_password = "root"
 
 # Path to the original full size NGA image 
 # You can use {CHART_NUMBER} which will be substituted with the corresponding chart number while it's being processed
-$jpg_path = "/tmp/{CHART_NUMBER}/{CHART_NUMBER}.jpg"
+$jpg_path = "C:\\work\\opencpn\\ngacharts\\tools\\{CHART_NUMBER}\\{CHART_NUMBER}.jpg"
 
 # directory to save all the output
 # You can use {CHART_NUMBER} which will be substituted with the corresponding chart number while it's being processed
-$output_dir = "/tmp/"
+$output_dir = "C:\\work\\opencpn\\ngacharts\\tools\\" #"/tmp/"
 
 # Program paths
 
 # command to convert the images
-$convert_command = "\"C:\\Program Files\\GraphicsMagick-1.3.12-Q16\\gm\" convert" # "gm convert"
+$convert_command = "\"C:\\Program Files\\GraphicsMagick-1.3.12-Q16\\gm.exe\" convert" # "gm convert"
 
 # ImgKAP
-$imgkap_command = "C:\\work\\opencpn\\ngacharts\\tools\\imgkap" # "imgkap"
+$imgkap_command = "C:\\work\\opencpn\\ngacharts\\tools\\imgkap.exe" # "imgkap"
