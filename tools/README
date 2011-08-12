@@ -1,0 +1,9 @@
+Ruby1.9:
+gem install ruby-mysql
+
+Ruby 1.8
+gem install mysql-ruby
+change 
+require "Mysql"
+to
+require "mysql"

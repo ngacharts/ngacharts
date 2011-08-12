@@ -10,7 +10,6 @@
 #define VERS   "1.11"
 
 #include <stdint.h>
-#define _USE_MATH_DEFINES// before you #include <cmath>
 #include <math.h>
 #include <stdio.h>
 #include <ctype.h>
@@ -1484,7 +1483,7 @@ int imgheadertokap(int typein,char *filein,int typeheader, int optkap, int color
 
         time(&t) ;
         date = localtime(&t);
-        strftime(datej, sizeof(datej), "%Y-%m/%d",date);
+        strftime(datej, sizeof(datej), "%Y-%m-%d",date);
     }
 
 	header = fopen(fileheader, "rb");
