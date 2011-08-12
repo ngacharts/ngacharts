@@ -795,9 +795,13 @@ end
 # Utility functions class
 # This class contains constants and methods used for the computations
 class Util
+  # PI
   PI = 3.1415926535897931160E0
+  # Conversion from degree to radian
   DEGREE = PI / 180.0
+  # Conversion from radian to degree
   RADIAN = 180.0 / PI
+  # Nautical mile in meters
   NAUTICAL_MILE = 1852
   
   # Distance in meters

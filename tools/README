@@ -7,3 +7,6 @@ change
 require "Mysql"
 to
 require "mysql"
+
+Compiling imgkap:
+gcc -I./FreeImage/Source/ imgkap.c -O3 -s -lfreeimage -o imgkap
