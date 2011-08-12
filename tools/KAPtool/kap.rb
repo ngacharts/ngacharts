@@ -2,6 +2,7 @@
 #
 # Author::    Pavel Kalian  (mailto:pavel@kalian.cz)
 # Copyright:: Copyright (c) 2011 Pavel Kalian
+# Portions from gc.rb script Copyright (C) 2009 by Thomas Hockne
 # License::   Distributes under the terms of GPLv2 or later
 
 require "Mysql"
@@ -383,18 +384,22 @@ class KAPHeader
       str << "\n"
       str << "    PP=#{sprintf('%.1f', @knp_pp)}"
       str << ",PI=#{@knp_pi}"
-      if(@knp_sp.length == 2)
-        str << ",SP=#{@knp_sp[0]},#{@knp_sp[1]}"
+      if(@knp_sp.class == "Array")
+        if (@knp_sp.length == 2)
+          str << ",SP=#{@knp_sp[0]},#{@knp_sp[1]}"
+        else
+          str << ",SP=#{@knp_sp[0]}"
+        end
       else
-        str << ",SP=#{@knp_sp[0]}"
+        str << ",SP=#{@knp_sp}"
       end
       str << ",SK=#{@knp_sk}"
       str << ",TA=#{@knp_ta}"
       str << "\n"
       str << "    UN=#{@knp_un}"
       str << ",SD=#{@knp_sd}"
-      str << ",DX=#{@knp_dx}"
-      str << ",DY=#{@knp_dy}"
+      str << ",DX=#{sprintf("%.1f", @knp_dx)}"
+      str << ",DY=#{sprintf("%.1f", @knp_dy)}"
       str << "\n"
     end
     if (@knq_ec != nil && !@knq_ec.empty?)
@@ -622,7 +627,7 @@ class Chart
       kap.crr = "This chart is released by the OpenCPN.info - NGA chart project."
       kap.bsb_na = row["title"]
       kap.bsb_nu = row["number"]
-      kap.bsb_ra = [row["width"], row["height"]]
+      kap.bsb_ra = [row["width"].to_i, row["height"].to_i]
       kap.bsb_du = 72
       
       kap.ced_se = row["edition"]
@@ -636,13 +641,15 @@ class Chart
       kap.knp_pi = "UNKNOWN"
       kap.knp_sk = 0.0 #TODO
       kap.knp_ta = nil
-      kap.knp_un = row["un"]
-      kap.knp_sd = row["sd"]
-      kap.knp_dx = nil
-      kap.knp_dy = nil
+      kap.knp_un = row["UN"]
+      kap.knp_sd = row["SD"]
+      kap.knp_dx = Util.distance_meters(row["North"].to_f * Util::DEGREE, row["East"].to_f * Util::DEGREE, row["North"].to_f * Util::DEGREE, row["West"].to_f * Util::DEGREE) / kap.bsb_ra[0] #TODO - This should probably be computed at PP and in the middle of the other axis
+      kap.knp_dy = Util.distance_meters(row["North"].to_f * Util::DEGREE, row["East"].to_f * Util::DEGREE, row["South"].to_f * Util::DEGREE, row["East"].to_f * Util::DEGREE) / kap.bsb_ra[1]
       kap.knp_sp = "UNKNOWN"
 
       kap.dtm = [-1 * row["DTMx"].to_f * 60, -1 * row["DTMy"].to_f * 60]
+      if (kap.dtm[0] == -0.0) then kap.dtm[0] = 0.0 end
+      if (kap.dtm[1] == -0.0) then kap.dtm[1] = 0.0 end
       kap.ifm = 5 #TODO - parameter of our process
       kap.ost = 1
       
@@ -686,6 +693,50 @@ class Chart
     end
 
     res.free
+  end
+end
+
+# Utility functions class
+# This class contains constants and methods used for the computations
+class Util
+  PI = 3.1415926535897931160E0
+  DEGREE = PI / 180.0
+  RADIAN = 180.0 / PI
+  NAUTICAL_MILE = 1852
+  
+  # Distance in meters
+  def Util.distance_meters(lat_a,long_a,lat_b,long_b)
+    return Util.distance(lat_a,long_a,lat_b,long_b) * RADIAN * 60 * Util::NAUTICAL_MILE 
+  end
+  
+  # Great Circle Distance
+  # arguments in radians
+  # taken from gc.rb
+  def Util.distance(lat_a,long_a,lat_b,long_b)
+    distance = Math.acos( Math.cos(lat_a) * Math.cos(lat_b) *Math.cos(diff_long(long_a,long_b)) + Math.sin(lat_a) * Math.sin(lat_b))
+    return distance 
+  end
+  
+  private
+  # long diff
+  # taken from gc.rb
+  def Util.diff_long(longS,longD)
+    longS = longS.to_f 
+    longD = longD.to_f 
+    
+    if (longS.abs + longD.abs) <= PI
+      diff = longD -longS
+      
+    elsif (longS.abs + longD.abs) > PI
+    if longS > 0 && longD < 0  # heading E
+      diff = 2.0 * PI + (longD -longS)
+    elsif  longS < 0 && longD > 0  # heading W
+      diff = (longD - longS) - 2.0 * PI
+    elsif  ( longS > 0 && longD > 0 )||( longS < 0 && longD < 0 )
+       diff = longD -longS
+    end
+    end
+    return diff
   end
 end
 
