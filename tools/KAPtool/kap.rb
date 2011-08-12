@@ -7,11 +7,7 @@
 
 require "Mysql"
 require "./bsb.rb"
-
-$db_host = "127.0.0.1"
-$db_database = "nga"
-$db_username = "root"
-$db_password = "root"
+require "./config.rb"
 
 # This class represents the KAP chart header<br/>
 # The chapter numbers refer to IHO standard document S-61: http://88.208.211.37/iho_pubs/standard/S61E.pdf<br/>
@@ -353,6 +349,68 @@ class KAPHeader
       @dtm = header_text[begidx, endidx-begidx].split(',')
     end
   end
+  
+  # Calculates the value for KNP/PP in case it was not given on the chart 
+  # TODO: Are we going to handle it for more projections?
+  def compute_pp
+    if (@knp_pr == "MERCATOR")
+      @knp_pp = (min_lat + max_lat) / 2
+    end
+    if (@knp_pr == "TRANSVERSE MERCATOR")
+      @knp_pp = (min_lon + max_lon) / 2
+    end
+  end
+  
+  # Gets the minimum latitude amongst all the PLY points
+  def min_lat
+    min_lat = 90
+    @ply.each {|ply|
+      if ply.latitude.to_f < min_lat then min_lat = ply.latitude.to_f end
+      }
+    return min_lat
+  end
+  
+  # Gets the maximum latitude amongst all the PLY points
+  def max_lat
+    max_lat = -90
+    @ply.each {|ply|
+      if ply.latitude.to_f > max_lat then max_lat = ply.latitude.to_f end
+      }
+    return max_lat
+  end
+  
+  # Gets the minimum longitude amongst all the PLY points
+  def min_lon
+    min_lon = 180
+    @ply.each {|ply|
+      if ply.longitude.to_f < min_lon then min_lon = ply.longitude.to_f end
+      }
+    return min_lon
+  end
+  
+  # Gets the maximum longitude amongst all the PLY points
+  def max_lon
+    max_lon = -180
+    @ply.each {|ply|
+      if ply.longitude.to_f > max_lon then max_lon = ply.longitude.to_f end
+      }
+    return max_lon
+  end
+  
+  # Calculates meters per pixel value
+  def compute_dxdy
+    @knp_dx = Util.distance_meters(min_lat * Util::DEGREE, min_lon * Util::DEGREE, min_lat * Util::DEGREE, max_lon * Util::DEGREE) / @bsb_ra[0]
+    @knp_dy = Util.distance_meters(min_lat * Util::DEGREE, min_lon * Util::DEGREE, max_lat * Util::DEGREE, min_lon * Util::DEGREE) / @bsb_ra[1] #TODO - Should this be computed at PP and in the middle of the other axis?
+  end
+  
+  # Recalculates the X and Y coordinates so that they reflex the new size
+  # Recomputes the needed parameters
+  def resize_to_percent(percent)
+    @bsb_ra[0] = (@bsb_ra[0] * percent / 100).round
+    @bsb_ra[1] = (@bsb_ra[1] * percent / 100).round
+    @ref.each{|ref| ref.resize_to_percent(50)}
+    compute_dxdy
+  end
 
   # Returns formatted header text
   def to_s
@@ -500,6 +558,12 @@ class REF
     "REF/#{@idx},#{@x},#{@y},#{sprintf('%.8f', @latitude)},#{sprintf('%.8f', @longitude)}"
   end
   
+  # Recalculates the X and Y coordinates so that they reflex the new size
+  def resize_to_percent(percent)
+    @x = (@x.to_f * percent / 100).round
+    @y = (@y.to_f * percent / 100).round
+  end
+  
   # Returns the point converted to PLY point
   def to_PLY
     ply = PLY.new
@@ -601,9 +665,13 @@ class Chart
       @bsb.org = "NGA"
       @bsb.mfr = "NGA chart project"
       @bsb.cgd = 0
-      @bsb.ced_se = row["edition"]
-      @bsb.ced_re = 1
-      @bsb.ced_ed = 1
+      @bsb.ced_se = row["date"] #row["edition"]
+      @bsb.ced_re = 1 #TODO - parameter of our process
+      @bsb.ced_ed = 1 #TODO - parameter of our process
+      @bsb.ntm_ne = row["edition"]
+      @bsb.ntm_nd = row["correction"]
+      @bsb.ntm_bf = "UNKNOWN"
+      @bsb.ntm_bd = "UNKNOWN"
       
       ki = KAPinfo.new
       ki.idx = @bsb.kap.length + 1
@@ -628,9 +696,9 @@ class Chart
       kap.bsb_na = row["title"]
       kap.bsb_nu = row["number"]
       kap.bsb_ra = [row["width"].to_i, row["height"].to_i]
-      kap.bsb_du = 72
+      kap.bsb_du = 72 # TODO - Will we bother with the DPI?
       
-      kap.ced_se = row["edition"]
+      kap.ced_se = row["date"] #row["edition"]
       kap.ced_re = 1 #TODO - parameter of our process
       kap.ced_ed = 1 #TODO - parameter of our process
       
@@ -639,12 +707,10 @@ class Chart
       kap.knp_pr = row["PR"]
       kap.knp_pp = row["PP"]
       kap.knp_pi = "UNKNOWN"
-      kap.knp_sk = 0.0 #TODO
+      kap.knp_sk = 0.0 #TODO - generally we do not want the skewed charts, but...
       kap.knp_ta = nil
       kap.knp_un = row["UN"]
       kap.knp_sd = row["SD"]
-      kap.knp_dx = Util.distance_meters(row["North"].to_f * Util::DEGREE, row["East"].to_f * Util::DEGREE, row["North"].to_f * Util::DEGREE, row["West"].to_f * Util::DEGREE) / kap.bsb_ra[0] #TODO - This should probably be computed at PP and in the middle of the other axis
-      kap.knp_dy = Util.distance_meters(row["North"].to_f * Util::DEGREE, row["East"].to_f * Util::DEGREE, row["South"].to_f * Util::DEGREE, row["East"].to_f * Util::DEGREE) / kap.bsb_ra[1]
       kap.knp_sp = "UNKNOWN"
 
       kap.dtm = [-1 * row["DTMx"].to_f * 60, -1 * row["DTMy"].to_f * 60]
@@ -689,10 +755,40 @@ class Chart
       kap.ref << se
       kap.ply << se.to_PLY
       
+      if (kap.knp_pp == nil) then kap.compute_pp end
+      kap.compute_dxdy
+      
       @kaps << kap
     end
 
     res.free
+  end
+  
+  # Produces the chart
+  def produce(number, percent)
+    output_dir = $output_dir.gsub("{CHART_NUMBER}", number.to_s)
+    jpg_path = $jpg_path.gsub("{CHART_NUMBER}", number.to_s)
+    
+    # create resized image 
+    if (!File.exists?("#{output_dir}/#{number}.png"))
+      `#{$convert_command} #{jpg_path} -level 5% -resize #{percent}% -depth 8 -colors 32 -type Palette png8:#{output_dir}/#{number}.png`
+    end
+    # load from db
+    @number =  number
+    load_from_db
+    # resize header
+    @kaps[0].resize_to_percent(50)
+    # create BSB
+    File.open("#{output_dir}/#{number}.bsb", "w") {|file|
+      file << @bsb
+      file.close
+      }
+    # produce the KAP
+    File.open("#{output_dir}/#{number}.txt", "w") {|file|
+      file << @kaps[0]
+      file.close
+      }
+    `#{$imgkap_command} -n #{output_dir}/#{number}.png #{output_dir}/#{number}.txt #{output_dir}/#{number}.kap`
   end
 end
 
@@ -705,36 +801,36 @@ class Util
   NAUTICAL_MILE = 1852
   
   # Distance in meters
-  def Util.distance_meters(lat_a,long_a,lat_b,long_b)
-    return Util.distance(lat_a,long_a,lat_b,long_b) * RADIAN * 60 * Util::NAUTICAL_MILE 
+  def Util.distance_meters(lat_a, long_a, lat_b, long_b)
+    return Util.distance(lat_a, long_a, lat_b, long_b) * RADIAN * 60 * Util::NAUTICAL_MILE 
   end
   
   # Great Circle Distance
   # arguments in radians
   # taken from gc.rb
   def Util.distance(lat_a,long_a,lat_b,long_b)
-    distance = Math.acos( Math.cos(lat_a) * Math.cos(lat_b) *Math.cos(diff_long(long_a,long_b)) + Math.sin(lat_a) * Math.sin(lat_b))
+    distance = Math.acos( Math.cos(lat_a) * Math.cos(lat_b) * Math.cos(diff_long(long_a,long_b)) + Math.sin(lat_a) * Math.sin(lat_b))
     return distance 
   end
   
   private
   # long diff
   # taken from gc.rb
-  def Util.diff_long(longS,longD)
+  def Util.diff_long(longS, longD)
     longS = longS.to_f 
     longD = longD.to_f 
     
     if (longS.abs + longD.abs) <= PI
-      diff = longD -longS
+      diff = longD - longS
       
     elsif (longS.abs + longD.abs) > PI
-    if longS > 0 && longD < 0  # heading E
-      diff = 2.0 * PI + (longD -longS)
-    elsif  longS < 0 && longD > 0  # heading W
-      diff = (longD - longS) - 2.0 * PI
-    elsif  ( longS > 0 && longD > 0 )||( longS < 0 && longD < 0 )
-       diff = longD -longS
-    end
+      if longS > 0 && longD < 0  # heading E
+        diff = 2.0 * PI + (longD - longS)
+      elsif longS < 0 && longD > 0  # heading W
+        diff = (longD - longS) - 2.0 * PI
+      elsif (longS > 0 && longD > 0 )||( longS < 0 && longD < 0)
+         diff = longD - longS
+      end
     end
     return diff
   end
@@ -1040,15 +1136,13 @@ begin
   #puts "Server version: " + $dbh.get_server_info
   
   chart = Chart.new
-  chart.number = 37112
-  chart.load_from_db
-  #puts chart.bsb
-  puts chart.kaps[0] 
+  chart.produce(37112, 50)
   
 rescue Mysql::Error => e
   puts "Error code: #{e.errno}"
   puts "Error message: #{e.error}"
   puts "Error SQLSTATE: #{e.sqlstate}" if e.respond_to?("sqlstate")
+  
 ensure
   # disconnect from server
   $dbh.close if $dbh
