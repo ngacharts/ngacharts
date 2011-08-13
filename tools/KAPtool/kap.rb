@@ -137,6 +137,7 @@ class KAPHeader
   attr_accessor :dtm_dat
   
   # KNQ - Observed, but not documented anywhere
+  # Seems mandatory in version 3.0 - Caris Easy View refuses to load charts stating being version 3.0 and not containing this section
   # Format:
   # KNQ/EC=RF,GD=NARC,VC=UNKNOWN,SC=MLLW,PC=MC,P1=UNKNOWN,P2=37.083
   #     P3=NOT_APPLICABLE,P4=NOT_APPLICABLE,GC=NOT_APPLICABLE,RM=POLYNOMIAL
@@ -678,6 +679,7 @@ class Chart
     res = $dbh.query("SELECT * FROM ocpn_nga_charts_with_params WHERE number=#{@number}")
 
     while row = res.fetch_hash do
+      puts row.inspect
       @bsb = BSB.new
       @bsb.comment = "!This chart originates from
 !http://www.nauticalcharts.noaa.gov/mcd/OnLineViewer.html
@@ -687,7 +689,7 @@ class Chart
 !Screen captures of the charts available here do NOT fulfill chart
 !carriage requirements for regulated commercial vessels under
 !Titles 33 and 46 of the Code of Federal Regulations."
-      @bsb.ver = "3.0"
+      @bsb.ver = "2.0"
       @bsb.crr = "This chart is released by the OpenCPN.info - NGA chart project."
       @bsb.cht_na = row["title"]
       @bsb.cht_nu = row["number"]
@@ -721,12 +723,12 @@ class Chart
 !Screen captures of the charts available here do NOT fulfill chart
 !carriage requirements for regulated commercial vessels under
 !Titles 33 and 46 of the Code of Federal Regulations."
-      kap.ver = "3.0"
+      kap.ver = "2.0"
       kap.crr = "This chart is released by the OpenCPN.info - NGA chart project."
       kap.bsb_na = row["title"]
       kap.bsb_nu = row["number"]
       kap.bsb_ra = [row["width"].to_i, row["height"].to_i]
-      kap.bsb_du = 72 # TODO - Will we bother with the DPI?
+      kap.bsb_du = 72 # TODO - Will we bother with the DPI claculation?
       
       kap.ced_se = row["date"] #row["edition"]
       kap.ced_re = 1 #TODO - parameter of our process
@@ -821,7 +823,7 @@ class Chart
       file << @kaps[0]
       file.close
       }
-    `#{$imgkap_command} -n #{output_dir}/#{number}.png #{output_dir}/#{number}.txt #{output_dir}/#{number}.kap`
+    `#{$imgkap_command} -p NONE -n #{output_dir}/#{number}.png #{output_dir}/#{number}.txt #{output_dir}/#{number}.kap`
   end
 end
 
