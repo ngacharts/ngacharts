@@ -930,7 +930,7 @@ class Chart
     
     # create resized image 
     if (autorotate && @kaps[0].suggest_rotation.abs > $skew_angle) #if the skew is smaller than $skew_angle, we rotate the chart
-      `#{$convert_command} #{jpg_path} -rotate #{@kaps[0].suggest_rotation} -gravity center -level 5% -resize #{percent}% -depth 8 -colors 32 -type Palette png8:#{output_dir}/#{number}.png`
+      `#{$convert_command} #{jpg_path} -level 5% -resize #{percent}% -rotate #{@kaps[0].suggest_rotation} -depth 8 -colors 32 -type Palette png8:#{output_dir}/#{number}.png`
       @kaps[0].rotate(@kaps[0].suggest_rotation)
     else
       `#{$convert_command} #{jpg_path} -level 5% -resize #{percent}% -depth 8 -colors 32 -type Palette png8:#{output_dir}/#{number}.png`
