@@ -495,10 +495,10 @@ class KAPHeader
     leftmost = @ref[0]
     rightmost = @ref[0]
     @ref.each{|ref|
-      if ref.x < rightmost.x
+      if ref.x > rightmost.x
         rightmost = ref
       end
-      if ref.x > leftmost.x
+      if ref.x < leftmost.x
         leftmost = ref
       end
       }
