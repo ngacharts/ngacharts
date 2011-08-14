@@ -5,7 +5,11 @@
 # Portions from gc.rb script Copyright (C) 2009 by Thomas Hockne
 # License::   Distributes under the terms of GPLv2 or later
 
-require "Mysql"
+if (RUBY_VERSION.start_with?("1.9"))
+  require "Mysql"
+else
+  require "mysql"
+end
 require "./bsb.rb"
 require "./config.rb"
 
