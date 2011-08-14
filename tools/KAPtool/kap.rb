@@ -193,18 +193,145 @@ class KAPHeader
     end
   end
   
+  # Recalculates positions of all the ref points for the chart rotated around it's center by supplied amount of degrees
+  def rotate(deg)
+    center_x = @bsb_ra[0].to_f / 2
+    center_y = @bsb_ra[1].to_f / 2
+    @ref.each {|ref|
+      radius = Math.sqrt((ref.x.to_f - center_x)**2 + (ref.y.to_f - center_y)**2)
+      angle = Util::RADIAN * Math.atan((ref.y.to_f - center_y).abs / (ref.x.to_f - center_x).abs)
+      if (ref.x >= center_x)
+        if (ref.y >= center_y)
+          angle += 90
+          ref.x = (center_x + radius * Math.sin((angle + deg) * Util::DEGREE)).round
+          ref.y = (center_y - radius * Math.cos((angle + deg) * Util::DEGREE)).round
+        else
+          ref.x = (center_x + radius * Math.cos((angle - deg) * Util::DEGREE)).round
+          ref.y = (center_y - radius * Math.sin((angle - deg) * Util::DEGREE)).round
+        end
+      else
+        if (ref.y >= center_y)
+          angle += 180
+          ref.x = (center_x + radius * Math.cos((angle - deg) * Util::DEGREE)).round
+          ref.y = (center_y - radius * Math.sin((angle - deg) * Util::DEGREE)).round
+        else
+          angle += 270
+          ref.x = (center_x + radius * Math.sin((angle + deg) * Util::DEGREE)).round
+          ref.y = (center_y - radius * Math.cos((angle + deg) * Util::DEGREE)).round
+        end
+      end
+      }
+      new_width = (2 * Math.sqrt(center_x**2 + center_y**2) * Math.cos(Math.atan(center_y / center_x) + deg * Util::DEGREE)).round
+      new_height = (2 * Math.sqrt(center_x**2 + center_y**2) * Math.sin(Math.atan(center_y / center_x) - deg * Util::DEGREE)).round
+      @bsb_ra = [new_width, new_height]
+  end
+  
+  # Computes suggested rotation from the ref points
+  # TODO: It works correctly just for the charts with exactly 4 REF points defining the chart rectangle
+  def suggest_rotation
+    sw_x = sw_y = nw_x = nw_y = ne_x = ne_y = se_x = se_y = nil
+    @ref.each {|ref|
+      if (ref.idx == 1)
+        sw_x = ref.x
+        sw_y = ref.y
+      end
+      if (ref.idx == 2)
+        nw_x = ref.x
+        nw_y = ref.y
+      end
+      if (ref.idx == 3)
+        ne_x = ref.x
+        ne_y = ref.y
+      end
+      if (ref.idx == 4)
+        se_x = ref.x
+        se_y = ref.y
+      end
+      }
+    sk_rec = 0
+    sk_nr = 0
+    if (!sw_x.nil? && !nw_x.nil?)
+      sk_left = Util::RADIAN * Math.atan((sw_x-nw_x).to_f  / (sw_y-nw_y).to_f )
+      sk_nr += 1
+      sk_rec += sk_left 
+    end
+    if (!se_x.nil? && !nw_x.nil?) 
+      sk_right = Util::RADIAN * Math.atan((se_x-ne_x).to_f / (se_y-ne_y))
+      sk_nr += 1
+      sk_rec += sk_right
+    end
+    if (!ne_x.nil? && !nw_x.nil?)
+      sk_top = Util::RADIAN * Math.atan((nw_y-ne_y).to_f / (ne_x-nw_x))
+      sk_nr += 1
+      sk_rec += sk_top
+    end
+    if (!sw_x.nil? && !se_x.nil?)
+      sk_bottom = Util::RADIAN * Math.atan((sw_y-se_y).to_f / (se_x-sw_x))
+      sk_nr += 1
+      sk_rec += sk_bottom
+    end
+    sk_rec = sk_rec / sk_nr
+    return sprintf("%.2f", sk_rec).to_f
+  end
+  
   # Checks the data for correctness
+  # Calculates angles of the chart edges to estimate the skew
+  # TODO: It works correctly just for the charts with exactly 4 REF points defining the chart rectangle
   def check
     if (@ref.count < 4)
       puts "Not enough REF points"
     end
-    if (@ply.length != 0 && @ply.legth < 4)
+    if (@ply.length != 0 && @ply.length < 4)
       puts "Not enough PLY points"
     end
-    if (@rgb.length != 0 && rgb.length != 2**@ifm)
-      puts "The RGB color table looks corrupted, should have #{2**@ifm} colors, but has just #{@rgb.length}"
+    if (@rgb.length != 0 && rgb.length > 2**@ifm)
+      puts "The RGB color table looks corrupted or IFM set wrong, should have maximum #{2**@ifm} colors, but has #{@rgb.length}"
     end
     # 
+    sw_x = sw_y = nw_x = nw_y = ne_x = ne_y = se_x = se_y = nil
+    @ref.each {|ref|
+      if (ref.idx == 1)
+        sw_x = ref.x
+        sw_y = ref.y
+      end
+      if (ref.idx == 2)
+        nw_x = ref.x
+        nw_y = ref.y
+      end
+      if (ref.idx == 3)
+        ne_x = ref.x
+        ne_y = ref.y
+      end
+      if (ref.idx == 4)
+        se_x = ref.x
+        se_y = ref.y
+      end
+      }
+    sk_rec = 0
+    sk_nr = 0
+    if (!sw_x.nil? && !nw_x.nil?)
+      sk_left = Util::RADIAN * Math.atan((sw_x-nw_x).to_f  / (sw_y-nw_y).to_f )
+      sk_nr += 1
+      sk_rec += sk_left 
+    end
+    if (!se_x.nil? && !nw_x.nil?) 
+      sk_right = Util::RADIAN * Math.atan((se_x-ne_x).to_f / (se_y-ne_y))
+      sk_nr += 1
+      sk_rec += sk_right
+    end
+    if (!ne_x.nil? && !nw_x.nil?)
+      sk_top = Util::RADIAN * Math.atan((nw_y-ne_y).to_f / (ne_x-nw_x))
+      sk_nr += 1
+      sk_rec += sk_top
+    end
+    if (!sw_x.nil? && !se_x.nil?)
+      sk_bottom = Util::RADIAN * Math.atan((sw_y-se_y).to_f / (se_x-sw_x))
+      sk_nr += 1
+      sk_rec += sk_bottom
+    end
+    sk_rec = sk_rec / sk_nr
+    puts sprintf("Skew: left: %.3f, right %.3f, top: %.3f, bottom: %.3f degrees", sk_left, sk_right, sk_top, sk_bottom)
+    puts sprintf("Recommended image rotation: %.3f degrees", sk_rec)
   end
 
   # Parses the chart header text
@@ -577,11 +704,11 @@ class REF
   # Creating the object from the textual representation of the point in the chart header
   def read(ref_line)
     fields = ref_line.rstrip.split('/')[1].split(',')
-    @idx = fields[0]
-    @x = fields[1]
-    @y = fields[2]
-    @latitude = fields[3]
-    @longitude = fields[4]
+    @idx = fields[0].to_i
+    @x = fields[1].to_i
+    @y = fields[2].to_i
+    @latitude = fields[3].to_f
+    @longitude = fields[4].to_f
   end
 
   # Returns formatted text for the header
@@ -617,9 +744,9 @@ class PLY
   # Creating the object from the textual representation of the point in the chart header
   def read(ply_line)
     fields = ply_line.rstrip.split('/')[1].split(',')
-    @idx = fields[0]
-    @latitude = fields[1]
-    @longitude = fields[2]
+    @idx = fields[0].to_i
+    @latitude = fields[1].to_f
+    @longitude = fields[2].to_f
   end
 
   # Returns formatted text for the header
@@ -679,7 +806,7 @@ class Chart
     res = $dbh.query("SELECT * FROM ocpn_nga_charts_with_params WHERE number=#{@number}")
 
     while row = res.fetch_hash do
-      puts row.inspect
+      #puts row.inspect
       @bsb = BSB.new
       @bsb.comment = "!This chart originates from
 !http://www.nauticalcharts.noaa.gov/mcd/OnLineViewer.html
@@ -754,37 +881,37 @@ class Chart
       
       sw = REF.new
       sw.idx = 1
-      sw.x = row["Xsw"]
-      sw.y = row["Ysw"]
-      sw.latitude = row["South"]
-      sw.longitude = row["West"]
+      sw.x = row["Xsw"].to_i
+      sw.y = row["Ysw"].to_i
+      sw.latitude = row["South"].to_f
+      sw.longitude = row["West"].to_f
       kap.ref << sw
       kap.ply << sw.to_PLY
       
       nw = REF.new
       nw.idx = 2
-      nw.x = row["Xnw"]
-      nw.y = row["Ynw"]
-      nw.latitude = row["North"]
-      nw.longitude = row["West"]
+      nw.x = row["Xnw"].to_i
+      nw.y = row["Ynw"].to_i
+      nw.latitude = row["North"].to_f
+      nw.longitude = row["West"].to_f
       kap.ref << nw
       kap.ply << nw.to_PLY
       
       ne = REF.new
       ne.idx = 3
-      ne.x = row["Xne"]
-      ne.y = row["Yne"]
-      ne.latitude = row["North"]
-      ne.longitude = row["East"]
+      ne.x = row["Xne"].to_i
+      ne.y = row["Yne"].to_i
+      ne.latitude = row["North"].to_f
+      ne.longitude = row["East"].to_f
       kap.ref << ne
       kap.ply << ne.to_PLY
       
       se = REF.new
       se.idx = 4
-      se.x = row["Xse"]
-      se.y = row["Yse"]
-      se.latitude = row["South"]
-      se.longitude = row["East"]
+      se.x = row["Xse"].to_i
+      se.y = row["Yse"].to_i
+      se.latitude = row["South"].to_f
+      se.longitude = row["East"].to_f
       kap.ref << se
       kap.ply << se.to_PLY
       
@@ -800,17 +927,23 @@ class Chart
   end
   
   # Produces the chart
-  def produce(number, percent)
+  def produce(number, percent, autorotate = false)
     output_dir = $output_dir.gsub("{CHART_NUMBER}", number.to_s)
     jpg_path = $jpg_path.gsub("{CHART_NUMBER}", number.to_s)
     
-    # create resized image 
-    if (!File.exists?("#{output_dir}/#{number}.png"))
-      `#{$convert_command} #{jpg_path} -level 5% -resize #{percent}% -depth 8 -colors 32 -type Palette png8:#{output_dir}/#{number}.png`
-    end
     # load from db
     @number =  number
     load_from_db
+    
+    # create resized image 
+    if (autorotate && @kaps[0].suggest_rotation.abs > $skew_angle) #if the skew is smaller than $skew_angle, we rotate the chart
+      `#{$convert_command} #{jpg_path} -rotate #{@kaps[0].suggest_rotation} -level 5% -resize #{percent}% -depth 8 -colors 32 -type Palette png8:#{output_dir}/#{number}.png`
+      puts @kaps[0].suggest_rotation
+      @kaps[0].rotate(@kaps[0].suggest_rotation)
+      puts @kaps[0].suggest_rotation
+    else
+      `#{$convert_command} #{jpg_path} -level 5% -resize #{percent}% -depth 8 -colors 32 -type Palette png8:#{output_dir}/#{number}.png`
+    end
     # resize header
     @kaps[0].resize_to_percent(50)
     # create BSB
@@ -1175,7 +1308,8 @@ begin
   #puts "Server version: " + $dbh.get_server_info
   
   chart = Chart.new
-  chart.produce(37112, 50)
+  chart.produce(37112, 50, true)
+  chart.kaps[0].check
   
 rescue Mysql::Error => e
   puts "Error code: #{e.errno}"

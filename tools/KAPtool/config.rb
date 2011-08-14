@@ -22,7 +22,7 @@ $db_password = "root"
 
 # Path to the original full size NGA image 
 # You can use {CHART_NUMBER} which will be substituted with the corresponding chart number while it's being processed
-$jpg_path = "C:\\work\\opencpn\\ngacharts\\tools\\{CHART_NUMBER}\\{CHART_NUMBER}.jpg"
+$jpg_path = "C:\\work\\opencpn\\ngacharts\\tools\\{CHART_NUMBER}.jpg"
 
 # directory to save all the output
 # You can use {CHART_NUMBER} which will be substituted with the corresponding chart number while it's being processed
@@ -35,3 +35,6 @@ $convert_command = "\"C:\\Program Files\\GraphicsMagick-1.3.12-Q16\\gm.exe\" con
 
 # ImgKAP
 $imgkap_command = "C:\\work\\opencpn\\ngacharts\\tools\\imgkap.exe" # "imgkap"
+
+# Don't rotate charts if they look skewed less than $skew_angle degrees
+$skew_angle = 0.1
