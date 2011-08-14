@@ -930,7 +930,7 @@ class Chart
     load_from_db
     
     # resize header
-    @kaps[0].resize_to_percent(50)
+    @kaps[0].resize_to_percent(percent)
     
     # create resized image 
     if (autorotate && @kaps[0].suggest_rotation.abs > $skew_angle) #if the skew is smaller than $skew_angle, we rotate the chart
