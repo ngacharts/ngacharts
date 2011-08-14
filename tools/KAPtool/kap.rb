@@ -556,7 +556,7 @@ class KAPHeader
   def resize_to_percent(percent)
     @bsb_ra[0] = (@bsb_ra[0] * percent / 100).round
     @bsb_ra[1] = (@bsb_ra[1] * percent / 100).round
-    @ref.each{|ref| ref.resize_to_percent(50)}
+    @ref.each{|ref| ref.resize_to_percent(percent)}
     compute_dxdy
   end
 
