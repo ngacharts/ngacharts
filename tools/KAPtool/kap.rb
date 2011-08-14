@@ -195,34 +195,24 @@ class KAPHeader
   
   # Recalculates positions of all the ref points for the chart rotated around it's center by supplied amount of degrees
   def rotate(deg)
-    center_x = @bsb_ra[0].to_f / 2
-    center_y = @bsb_ra[1].to_f / 2
+    angle = Util::DEGREE * deg
+    width = @bsb_ra[0].to_i
+    height = @bsb_ra[1].to_i
+    center_x = width.to_f  / 2
+    center_y = height.to_f / 2
+    new_width = (2 * Math.sqrt(center_x**2 + center_y**2) * Math.cos(Math.atan(center_y / center_x) + deg * Util::DEGREE)).round
+    new_height = (2 * Math.sqrt(center_x**2 + center_y**2) * Math.sin(Math.atan(center_y / center_x) - deg * Util::DEGREE)).round
+    xadd = ((new_width - width) / 2).round
+    yadd = ((new_height - height) / 2).round
     @ref.each {|ref|
-      radius = Math.sqrt((ref.x.to_f - center_x)**2 + (ref.y.to_f - center_y)**2)
-      angle = Util::RADIAN * Math.atan((ref.y.to_f - center_y).abs / (ref.x.to_f - center_x).abs)
-      if (ref.x >= center_x)
-        if (ref.y >= center_y)
-          angle += 90
-          ref.x = (center_x + radius * Math.sin((angle + deg) * Util::DEGREE)).round
-          ref.y = (center_y - radius * Math.cos((angle + deg) * Util::DEGREE)).round
-        else
-          ref.x = (center_x + radius * Math.cos((angle - deg) * Util::DEGREE)).round
-          ref.y = (center_y - radius * Math.sin((angle - deg) * Util::DEGREE)).round
-        end
-      else
-        if (ref.y >= center_y)
-          angle += 180
-          ref.x = (center_x + radius * Math.cos((angle - deg) * Util::DEGREE)).round
-          ref.y = (center_y - radius * Math.sin((angle - deg) * Util::DEGREE)).round
-        else
-          angle += 270
-          ref.x = (center_x + radius * Math.sin((angle + deg) * Util::DEGREE)).round
-          ref.y = (center_y - radius * Math.cos((angle + deg) * Util::DEGREE)).round
-        end
-      end
+      xxc = ref.x - center_x
+      yyc = ref.y - center_y
+      x1xc = Math.cos(angle) * xxc - Math.sin(angle) * yyc
+      y1yc = Math.sin(angle) * xxc + Math.cos(angle) * yyc
+      ref.x = (x1xc + center_x + xadd).round
+      ref.y = (y1yc + center_y + yadd).round
       }
-      new_width = (2 * Math.sqrt(center_x**2 + center_y**2) * Math.cos(Math.atan(center_y / center_x) + deg * Util::DEGREE)).round
-      new_height = (2 * Math.sqrt(center_x**2 + center_y**2) * Math.sin(Math.atan(center_y / center_x) - deg * Util::DEGREE)).round
+      
       @bsb_ra = [new_width, new_height]
   end
   
@@ -935,17 +925,17 @@ class Chart
     @number =  number
     load_from_db
     
+    # resize header
+    @kaps[0].resize_to_percent(50)
+    
     # create resized image 
     if (autorotate && @kaps[0].suggest_rotation.abs > $skew_angle) #if the skew is smaller than $skew_angle, we rotate the chart
-      `#{$convert_command} #{jpg_path} -rotate #{@kaps[0].suggest_rotation} -level 5% -resize #{percent}% -depth 8 -colors 32 -type Palette png8:#{output_dir}/#{number}.png`
-      puts @kaps[0].suggest_rotation
+      `#{$convert_command} #{jpg_path} -rotate #{@kaps[0].suggest_rotation} -gravity center -level 5% -resize #{percent}% -depth 8 -colors 32 -type Palette png8:#{output_dir}/#{number}.png`
       @kaps[0].rotate(@kaps[0].suggest_rotation)
-      puts @kaps[0].suggest_rotation
     else
       `#{$convert_command} #{jpg_path} -level 5% -resize #{percent}% -depth 8 -colors 32 -type Palette png8:#{output_dir}/#{number}.png`
     end
-    # resize header
-    @kaps[0].resize_to_percent(50)
+    
     # create BSB
     File.open("#{output_dir}/#{number}.bsb", "w") {|file|
       file << @bsb
