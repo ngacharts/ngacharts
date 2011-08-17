@@ -102,26 +102,27 @@ class KAPHeader
   attr_accessor :cph
   # TODO: WPX - Polynomial L to X
   # Format:<br/>
-  # WPX/2,863264.4957,11420.23114,-85.46756208,1.913941167,-0.4081181078
-  #     0.7362163163
+  ## WPX/2,863264.4957,11420.23114,-85.46756208,1.913941167,-0.4081181078
+  ##     0.7362163163
   attr_accessor :wpx # TODO
   # TODO: PWX - Polynomial X to L
   # Format:
-  # PWX/2,-76.48368342,8.999135076e-005,5.758392982e-009,-1.392859319e-012
-  #     -2.377189159e-013,-3.432372134e-013
+  ## PWX/2,-76.48368342,8.999135076e-005,5.758392982e-009,-1.392859319e-012
+  ##     -2.377189159e-013,-3.432372134e-013
   attr_accessor :pwx # TODO
   # TODO: WPY - Polynomial L to Y
   # Format:
-  # WPY/2,390032.0953,69.56409751,-6745.589267,0.4669253601,0.0367153316
-  #     -96.0547565
+  ## WPY/2,390032.0953,69.56409751,-6745.589267,0.4669253601,0.0367153316
+  ##     -96.0547565
   attr_accessor :wpy # TODO
   # TODO: PWY - Polynomial Y to L
   # Format:
-  # PWY/2,37.44988807,-3.111799225e-009,-7.171936009e-005,2.694372983e-013
-  #     -1.725045227e-014,-3.594145418e-011
+  ## PWY/2,37.44988807,-3.111799225e-009,-7.171936009e-005,2.694372983e-013
+  ##     -1.725045227e-014,-3.594145418e-011
   attr_accessor :pwy # TODO
   # TODO: ERR - Error Record
-  # Format: multiple records - ERR/1,0.0395099814,0.1453734568,0.0000106128,0.0000035393
+  # Format: multiple records
+  ## ERR/1,0.0395099814,0.1453734568,0.0000106128,0.0000035393
   attr_accessor :err # TODO
   # PLY - Border Polygon Record
   # multiple records
@@ -135,8 +136,8 @@ class KAPHeader
   # KNQ - Observed, but not documented anywhere
   # Seems mandatory in version 3.0 - Caris Easy View refuses to load charts stating being version 3.0 and not containing this section
   # Format:
-  # KNQ/EC=RF,GD=NARC,VC=UNKNOWN,SC=MLLW,PC=MC,P1=UNKNOWN,P2=37.083
-  #     P3=NOT_APPLICABLE,P4=NOT_APPLICABLE,GC=NOT_APPLICABLE,RM=POLYNOMIAL
+  ## KNQ/EC=RF,GD=NARC,VC=UNKNOWN,SC=MLLW,PC=MC,P1=UNKNOWN,P2=37.083
+  ##     P3=NOT_APPLICABLE,P4=NOT_APPLICABLE,GC=NOT_APPLICABLE,RM=POLYNOMIAL
   
   #EC - ???
   attr_accessor :knq_ec
@@ -602,7 +603,7 @@ class KAPHeader
   end
   
   # Calculate longitude of a point at given x-axis coordinate
- ## The algorithm hates any skew in the chart image and the accouracy deteriorates with the skew increasing.
+  # The algorithm hates any skew in the chart image and the accouracy deteriorates with the skew increasing.
   # If your chart is skewed or not mercator with those nice right angles between parallels and meridians, foorget about it.
   # The algorithm is simplified for our needs and uses the most extreme REF points in anticipation, that the chart is unskewed and rectangular, to achieve higher local precission, REF points as close as possible to the target coordinates should be used.
   def lon_at_x(x)

@@ -9,10 +9,8 @@
 # * The chapter numbers refer to IHO standard document S-61: http://88.208.211.37/iho_pubs/standard/S61E.pdf
 # * The state copies the information for BSB Version 3.0, as described documents available from http://88.208.211.37/iho_pubs/standard/S-64_Edition_1-1/RNC_Test_Data_Sets/BSB_TDS/BSB_TDS.htm
 # * The header can also contain following type of records:
-# <tt>
-#   N000005580001/RT=N,KN=12221_1,CA=CAUTION,DE=NOTICE TO MARINERS,P1=1028,8940
-#       P2=1028,9112,P3=1974,9112,P4=1974,8940
-# </tt>
+##   N000005580001/RT=N,KN=12221_1,CA=CAUTION,DE=NOTICE TO MARINERS,P1=1028,8940
+##       P2=1028,9112,P3=1974,9112,P4=1974,8940
 class BSB
   # File comment, lines starting with ! 
   attr_accessor :comment
