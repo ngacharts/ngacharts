@@ -602,10 +602,19 @@ class KAPHeader
   def lon_at_x(x)
     if (!crosses_dateline)
       xres = (max_lon - min_lon) / (max_x - min_x)
+      lon = min_lon + xres * (x - min_x)
     else # chart crosses the date line
       xres = (360 - max_lon + min_lon) / (max_x - min_x)
+      lon = max_lon + xres * (x - min_x)
     end
-    return min_lon + xres * (x - min_x)
+    if (lon < -180)
+      lon += 360
+    else
+      if (lon > 180)
+        lon -= 360
+      end
+    end
+    return lon 
   end
   
   # Recalculates the X and Y coordinates so that they reflex the new size
