@@ -1,5 +1,5 @@
-# The program handles the BSB files, holding information
-# about gorups of KAP charts originating from the same paper source
+# The classes for handling the BSB files, holding information
+# about groups of KAP charts originating from the same paper source
 #
 # Author::    Pavel Kalian  (mailto:pavel@kalian.cz)
 # Copyright:: Copyright (c) 2011 Pavel Kalian
@@ -78,6 +78,7 @@ class BSB
   # ?Region? Not seen very often (observed values are comma separated numbers like 4,6,36)
   attr_accessor :rgn
   
+  # default initializer
   def initialize
     @kap = Array.new
   end
@@ -232,7 +233,7 @@ class KAPinfo
     end
   end
     
-  # Constructor
+  # Loads the class from the BSB file record
   def load(kap_line)
     fields = kap_line.rstrip.split("/")
     @idx = fields[0].sub("K", "")
@@ -251,32 +252,4 @@ class KAPinfo
   def to_s
     "K#{@idx}/NA=#{@na}\n    NU=#{@nu},TY=#{@ty},FN=#{@fn}"
   end
-end
-
-# For testing - parses a file from the RNC testing dataset and prints out the result
-def bsb_test
-  bsb = BSB.new
-  bsb.read("!Copyright 1999, Maptech Inc.  All Rights Reserved.
-CRR/CERTIFICATE OF AUTHENTICITY
-    This electronic chart was produced under the authority of the National
-    Oceanic and Atmospheric Administration (NOAA).  NOAA is the hydrographic
-    office for the United States of America. The digital data provided by NOAA
-    from which this electronic chart was produced has been certified by NOAA
-    for navigation.  'NOAA' and the NOAA emblem are registered trademarks of
-    the National Oceanic and Atmospheric Administration.  'Maptech' and the
-    Maptech emblem are registered trademarks of Maptech, Inc. Copyright 1999
-    Maptech, Inc.  All rights reserved.
-CHT/NA=CHESAPEAKE BAY ENTRANCE,NU=12221
-CHF/COASTAL
-CED/SE=70,RE=01,ED=09/12/1998
-NTM/NE=70.00,ND=10/30/1999,BF=ON,BD=10/26/1999
-VER/3.0
-CHK/1,558
-CGD/5
-ORG/USA-NOAA/NOS
-MFR/MAPTECH
-RGN/4,6
-K01/NA=CHESAPEAKE BAY ENTRANCE,NU=558,TY=BASE,FN=12221_1.KAP")
-    
-  puts bsb
 end

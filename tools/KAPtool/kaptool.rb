@@ -1,4 +1,4 @@
-# The program handles the KAP chart files
+# The program handles the KAP chart files and BSB files
 #
 # Author::    Pavel Kalian  (mailto:pavel@kalian.cz)
 # Copyright:: Copyright (c) 2011 Pavel Kalian
@@ -238,75 +238,7 @@ class Util
   end
 end
 
-# test for the routines getting latitude and longitude corresponding with a given pixel in the image
-def test_getlatlon
-  k = KAPHeader.new
-  k.bsb_ra = [40, 40]
-  r = REF.new
-  r.x = 10
-  r.y = 30
-  r.latitude = -10
-  r.longitude = 170
-  k.ref << r
-  r = REF.new
-  r.x = 10
-  r.y = 10
-  r.latitude = 10
-  r.longitude = 170
-  k.ref << r
-  r = REF.new
-  r.x = 30
-  r.y = 10
-  r.latitude = 10
-  r.longitude = -170
-  k.ref << r
-  r = REF.new
-  r.x = 30
-  r.y = 30
-  r.latitude = -10
-  r.longitude = -170
-  k.ref << r
-  puts k.inspect
-  puts k.lat_at_y (11)
-  puts k.lon_at_x (11)
-  puts k.lat_at_y (21)
-  puts k.lon_at_x (21)
-  
-  k = KAPHeader.new
-  k.bsb_ra = [40, 40]
-  r = REF.new
-  r.x = 10
-  r.y = 30
-  r.latitude = -10
-  r.longitude = -10
-  k.ref << r
-  r = REF.new
-  r.x = 10
-  r.y = 10
-  r.latitude = 10
-  r.longitude = -10
-  k.ref << r
-  r = REF.new
-  r.x = 30
-  r.y = 10
-  r.latitude = 10
-  r.longitude = 10
-  k.ref << r
-  r = REF.new
-  r.x = 30
-  r.y = 30
-  r.latitude = -10
-  r.longitude = 10
-  k.ref << r
-  puts k.inspect
-  puts k.lat_at_y (11)
-  puts k.lon_at_x (11)
-  puts k.lat_at_y (21)
-  puts k.lon_at_x (21)
-end
-
 begin
-  test_getlatlon
   # connect to the MySQL server
   $dbh = Mysql.connect($db_host, $db_username, $db_password, $db_database)
   # get server version string and display it
