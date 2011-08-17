@@ -593,12 +593,18 @@ class KAPHeader
   end
   
   # Calculate latitude of a point at given y-axis coordinate
+  # The algorithm hates any skew in the chart image and the accouracy deteriorates with the skew increasing.
+  # If your chart is skewed or not mercator with those nice right angles between parallels and meridians, foorget about it.
+  # The algorithm is simplified for our needs and uses the most extreme REF points in anticipation, that the chart is unskewed and rectangular, to achieve higher local precission, REF points as close as possible to the target coordinates should be used.
   def lat_at_y(y)
     yres = (max_lat - min_lat) / (max_y - min_y)
     return min_lat + yres * (max_y - y)
   end
   
   # Calculate longitude of a point at given x-axis coordinate
+ ## The algorithm hates any skew in the chart image and the accouracy deteriorates with the skew increasing.
+  # If your chart is skewed or not mercator with those nice right angles between parallels and meridians, foorget about it.
+  # The algorithm is simplified for our needs and uses the most extreme REF points in anticipation, that the chart is unskewed and rectangular, to achieve higher local precission, REF points as close as possible to the target coordinates should be used.
   def lon_at_x(x)
     if (!crosses_dateline)
       xres = (max_lon - min_lon) / (max_x - min_x)
