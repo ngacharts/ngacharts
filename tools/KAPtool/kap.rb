@@ -493,8 +493,8 @@ class KAPHeader
     end
   end
   
-  # Does the chart pass the date line? if so, CHP has to be 180.0, otherwise 0.0
-  def compute_cph
+  # returns true if the chart crosses the international dateline
+  def crosses_dateline
     #search for the leftmost and rightmost ref and compare
     leftmost = @ref[0]
     rightmost = @ref[0]
@@ -507,52 +507,113 @@ class KAPHeader
       end
       }
     if (leftmost.longitude > rightmost.longitude)
+      return true
+    else
+      return false
+    end
+  end
+  
+  # Does the chart pass the date line? if so, CHP has to be 180.0, otherwise 0.0
+  def compute_cph
+    if (crosses_dateline)
       @cph = 180.0.to_s
     else
       @cph = 0.0.to_s
     end
   end
   
-  # Gets the minimum latitude amongst all the PLY points
+  # Gets the minimum latitude amongst all the REF points
   def min_lat
     min_lat = 90
-    @ply.each {|ply|
-      if ply.latitude.to_f < min_lat then min_lat = ply.latitude.to_f end
+    @ref.each {|point|
+      if point.latitude.to_f < min_lat then min_lat = point.latitude.to_f end
       }
     return min_lat
   end
   
-  # Gets the maximum latitude amongst all the PLY points
+  # Gets the maximum latitude amongst all the REF points
   def max_lat
     max_lat = -90
-    @ply.each {|ply|
-      if ply.latitude.to_f > max_lat then max_lat = ply.latitude.to_f end
+    @ref.each {|point|
+      if point.latitude.to_f > max_lat then max_lat = point.latitude.to_f end
       }
     return max_lat
   end
   
-  # Gets the minimum longitude amongst all the PLY points
+  # Gets the minimum longitude amongst all the REF points
   def min_lon
     min_lon = 180
-    @ply.each {|ply|
-      if ply.longitude.to_f < min_lon then min_lon = ply.longitude.to_f end
+    @ref.each {|point|
+      if point.longitude.to_f < min_lon then min_lon = point.longitude.to_f end
       }
     return min_lon
   end
   
-  # Gets the maximum longitude amongst all the PLY points
+  # Gets the maximum longitude amongst all the REF points
   def max_lon
     max_lon = -180
-    @ply.each {|ply|
-      if ply.longitude.to_f > max_lon then max_lon = ply.longitude.to_f end
+    @point.each {|point|
+      if point.longitude.to_f > max_lon then max_lon = point.longitude.to_f end
       }
     return max_lon
   end
   
+  # Gets the minimum x-coordinate amongst all the REF points
+  def min_x
+    min_x = @ra[0]
+    @ref.each {|point|
+      if point.x < min_x then min_x = point.x end
+      }
+    return min_x
+  end
+  
+  # Gets the maximum x-coordinate amongst all the REF points
+  def max_x
+    max_x = x
+    @ref.each {|point|
+      if point.x > max_x then max_x = point.x end
+      }
+    return max_x
+  end
+  
+  # Gets the minimum y-coordinate amongst all the REF points
+  def min_y
+    min_y = @ra[1]
+    @ref.each {|point|
+      if point.y < min_y then min_y = point.y end
+      }
+    return min_y
+  end
+  
+  # Gets the maximum y-coordinate amongst all the REF points
+  def max_y
+    max_y = 0
+    @point.each {|point|
+      if point.y > max_y then max_y = point.y end
+      }
+    return max_y
+  end
+  
   # Calculates meters per pixel value
   def compute_dxdy
-    @knp_dx = Util.distance_meters(min_lat * Util::DEGREE, min_lon * Util::DEGREE, min_lat * Util::DEGREE, max_lon * Util::DEGREE) / @bsb_ra[0]
-    @knp_dy = Util.distance_meters(min_lat * Util::DEGREE, min_lon * Util::DEGREE, max_lat * Util::DEGREE, min_lon * Util::DEGREE) / @bsb_ra[1] #TODO - Should this be computed at PP and in the middle of the other axis?
+    @knp_dx = Util.distance_meters(min_lat * Util::DEGREE, min_lon * Util::DEGREE, min_lat * Util::DEGREE, max_lon * Util::DEGREE) / (max_x - min_x)
+    @knp_dy = Util.distance_meters(min_lat * Util::DEGREE, min_lon * Util::DEGREE, max_lat * Util::DEGREE, min_lon * Util::DEGREE) / (max_y - min_y) #TODO - Should this be computed at PP and in the middle of the other axis?
+  end
+  
+  # Calculate latitude of a point at given y-axis coordinate
+  def lat_at_y(y)
+    yres = (max_lat - min_lat) / (max_y - min_y)
+    return min_lat + yres * (max_y - y)
+  end
+  
+  # Calculate longitude of a point at given x-axis coordinate
+  def lon_at_x(x)
+    if (!crosses_dateline)
+      xres = (max_lon - min_lon) / (max_x - min_x)
+    else # chart crosses the date line
+      xres = (360 - max_lon + min_lon) / (max_x - min_x)
+    end
+    return min_lon + xres * (x - min_x)
   end
   
   # Recalculates the X and Y coordinates so that they reflex the new size
