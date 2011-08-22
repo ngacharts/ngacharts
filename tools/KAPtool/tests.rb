@@ -470,4 +470,6 @@ def test_getxy
   puts k.y_at (-10)
 end
 
-test_getxy
+#test_getxy
+el = WGS72.new
+puts el.vicenty_distance(89.0, 0.0, 89.0, 1.0/60)
