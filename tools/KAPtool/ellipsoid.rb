@@ -19,7 +19,43 @@ class Ellipsoid
     l2 = (a * Math.cos(lat * Util::DEGREE))**2 + (b * Math.sin(lat * Util::DEGREE))**2
     return Math.sqrt(l1 / l2)
   end
+  
+  # The Earth's radius of curvature in the (north-south) meridian at given latitude
+  def meridional_radius_at(lat)
+    l1 = (a*b)**2
+    l2 = ((a * Math.cos(lat * Util::DEGREE))**2 + b * Math.sin(lat * Util::DEGREE)**2)**(3/2)
+    return l1 / l2 
+  end
+  
+  # If one point had appeared due east of the other, one finds the approximate curvature in east-west direction.
+  # This radius of curvature in the prime vertical, which is perpendicular, or normal, to M at geodetic latitude
+  def normal_radius_at(lat)
+    l1 = a**2
+    l2 = Math.sqlrt((a * Math.cos(lat * Util::DEGREE))**2 + (b * Math.sin(lat * Util::DEGREE))**2)
+    return l1 / l2
+  end
+  
+  # The Earth's mean radius of curvature (averaging over all directions) at latitude
+  def mean_radius_at(lat)
+    return Math.sqrt(meridional_radius_at(lat) * normal_radius_at(lat))
+  end
+  
+  # The Earth's radius of curvature along a course at geodetic bearing (measured clockwise from north) at given latitude
+  def course_radius_at(lat, course) 
+   return 1 / (Math.cos(course * Util::DEGREE)**2 / meridional_radius_at(lat) + Math.sin(course * Util::DEGREE)**2 / normal_radius_at(lat))
+  end
 end
+
+# This class represents the sphere with mean radius
+class MeanSphere < Ellipsoid
+  # Default initializer, sets parameters of the ellipsoid
+  def initialize
+    @a = 6371009.0
+    @b = 6371009.0
+    @f = 0.0
+  end
+end
+
 
 # This class represents the WGS 84 ellipsoid
 class WGS84 < Ellipsoid

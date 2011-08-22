@@ -14,7 +14,7 @@ class Projection
 
   # Default initializer  
   def initialize
-    @ellipsoid = WGS72.new #Probably the most common, so we use it as default  
+    @ellipsoid = MeanSphere.new #Probably the most common, so we use it as default  
   end
   
   # Latitude for the given Y coordinate. Input has to be netered in meters from [0,0]

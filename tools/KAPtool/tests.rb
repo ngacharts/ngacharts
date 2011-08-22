@@ -437,37 +437,37 @@ def test_getxy
   puts k.y_at (0)
   
   k = KAPHeader.new
-  k.bsb_ra = [40, 40]
+  k.bsb_ra = [40000, 40000]
   r = REF.new
-  r.x = 10
-  r.y = 30
-  r.latitude = -10
-  r.longitude = -10
+  r.x = 10000
+  r.y = 30000
+  r.latitude = 0.0
+  r.longitude = 0.0
   k.ref << r
   r = REF.new
-  r.x = 10
-  r.y = 10
-  r.latitude = 10
-  r.longitude = -10
+  r.x = 10000
+  r.y = 10000
+  r.latitude = 20.0
+  r.longitude = 0.0
   k.ref << r
   r = REF.new
-  r.x = 30
-  r.y = 10
-  r.latitude = 10
-  r.longitude = 10
+  r.x = 30000
+  r.y = 10000
+  r.latitude = 20.0
+  r.longitude = 20.0
   k.ref << r
   r = REF.new
-  r.x = 30
-  r.y = 30
-  r.latitude = -10
-  r.longitude = 10
+  r.x = 30000
+  r.y = 30000
+  r.latitude = 0.0
+  r.longitude = 20.0
   k.ref << r
   k.compute_dxdy
   puts k.inspect
   puts k.x_at (0)
   puts k.y_at (0)
-  puts k.x_at (1)
-  puts k.y_at (1)
+  puts k.x_at (10)
+  puts k.y_at (-10)
 end
 
 test_getxy
