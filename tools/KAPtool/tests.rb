@@ -4,10 +4,14 @@
 # Copyright:: Copyright (c) 2011 Pavel Kalian
 # License::   Distributes under the terms of GPLv2 or later
 
+require "./util.rb"
 require "./bsb.rb"
 require "./kap.rb"
+require "./ellipsoid.rb"
+require "./projection.rb"
 
 require "./config.rb"
+
 
 # For testing - parses a file from the RNC testing dataset and prints out the result
 def bsb_test
@@ -396,3 +400,74 @@ def test_getlatlon
   puts k.lat_at_y (21)
   puts k.lon_at_x (21)
 end
+
+# test for the routines getting pixel coordinates corresponding with given latitude and longitude
+def test_getxy
+  k = KAPHeader.new
+  k.bsb_ra = [40, 40]
+  r = REF.new
+  r.x = 10
+  r.y = 30
+  r.latitude = -10
+  r.longitude = 170
+  k.ref << r
+  r = REF.new
+  r.x = 10
+  r.y = 10
+  r.latitude = 10
+  r.longitude = 170
+  k.ref << r
+  r = REF.new
+  r.x = 30
+  r.y = 10
+  r.latitude = 10
+  r.longitude = -170
+  k.ref << r
+  r = REF.new
+  r.x = 30
+  r.y = 30
+  r.latitude = -10
+  r.longitude = -170
+  k.ref << r
+  k.compute_dxdy
+  puts k.inspect
+  puts k.x_at (179.99999)
+  puts k.y_at (0)
+  puts k.x_at (-179.99999)
+  puts k.y_at (0)
+  
+  k = KAPHeader.new
+  k.bsb_ra = [40, 40]
+  r = REF.new
+  r.x = 10
+  r.y = 30
+  r.latitude = -10
+  r.longitude = -10
+  k.ref << r
+  r = REF.new
+  r.x = 10
+  r.y = 10
+  r.latitude = 10
+  r.longitude = -10
+  k.ref << r
+  r = REF.new
+  r.x = 30
+  r.y = 10
+  r.latitude = 10
+  r.longitude = 10
+  k.ref << r
+  r = REF.new
+  r.x = 30
+  r.y = 30
+  r.latitude = -10
+  r.longitude = 10
+  k.ref << r
+  k.compute_dxdy
+  puts k.inspect
+  puts k.x_at (0)
+  puts k.y_at (0)
+  puts k.x_at (1)
+  puts k.y_at (1)
+end
+
+test_getxy

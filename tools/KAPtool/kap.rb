@@ -5,6 +5,9 @@
 # Portions from gc.rb script Copyright (C) 2009 by Thomas Hockne
 # License::   Distributes under the terms of GPLv2 or later
 
+require "./ellipsoid.rb"
+require "./projection.rb"
+
 # This class represents the KAP chart header<br/>
 # The chapter numbers refer to IHO standard document S-61: http://88.208.211.37/iho_pubs/standard/S61E.pdf<br/>
 # The state copies the information for BSB Version 3.0, as described documents available from http://88.208.211.37/iho_pubs/standard/S-64_Edition_1-1/RNC_Test_Data_Sets/BSB_TDS/BSB_TDS.htm<br/>
@@ -139,28 +142,31 @@ class KAPHeader
   ## KNQ/EC=RF,GD=NARC,VC=UNKNOWN,SC=MLLW,PC=MC,P1=UNKNOWN,P2=37.083
   ##     P3=NOT_APPLICABLE,P4=NOT_APPLICABLE,GC=NOT_APPLICABLE,RM=POLYNOMIAL
   
-  #EC - ???
+  # EC - ???
   attr_accessor :knq_ec
-  #GD - ???
+  # GD - ???
   attr_accessor :knq_gd
-  #VC - ???
+  # VC - ???
   attr_accessor :knq_vc
-  #SC - ???
+  # SC - ???
   attr_accessor :knq_sc
-  #PC - ???
+  # PC - ???
   attr_accessor :knq_pc
-  #P1 - ???
+  # P1 - ???
   attr_accessor :knq_p1
-  #P2 - ???
+  # P2 - ???
   attr_accessor :knq_p2
-  #P3 - ???
+  # P3 - ???
   attr_accessor :knq_p3
-  #P4 - ???
+  # P4 - ???
   attr_accessor :knq_p4
-  #GC - ???
+  # GC - ???
   attr_accessor :knq_gc
-  #RM - ???
+  # RM - ???
   attr_accessor :knq_rm
+  
+  # Projection
+  attr_accessor :projection 
   
   # Default initializer
   def initialize
@@ -176,6 +182,7 @@ class KAPHeader
     @gry = Array.new
     @prc = Array.new
     @prg = Array.new
+    @projection = Mercator.new # Probably the most common, so we use it as default
   end
 
   # Parses the string and finds the value for the key
@@ -589,8 +596,16 @@ class KAPHeader
   
   # Calculates meters per pixel value
   def compute_dxdy
-    @knp_dx = Util.distance_meters(min_lat * Util::DEGREE, min_lon * Util::DEGREE, min_lat * Util::DEGREE, max_lon * Util::DEGREE) / (max_x - min_x)
-    @knp_dy = Util.distance_meters(min_lat * Util::DEGREE, min_lon * Util::DEGREE, max_lat * Util::DEGREE, min_lon * Util::DEGREE) / (max_y - min_y) #TODO - Should this be computed at PP and in the middle of the other axis?
+    #Great circle computation
+    #@knp_dx = Util.distance_meters(min_lat * Util::DEGREE, min_lon * Util::DEGREE, min_lat * Util::DEGREE, max_lon * Util::DEGREE) / (max_x - min_x)
+    #@knp_dy = Util.distance_meters(min_lat * Util::DEGREE, min_lon * Util::DEGREE, max_lat * Util::DEGREE, min_lon * Util::DEGREE) / (max_y - min_y) #TODO - Should this be computed at PP and in the middle of the other axis?
+    #Carthesian computation
+    if (crosses_dateline)
+      @knp_dx = (@projection.x_at(180) - @projection.x_at(max_lon) + @projection.x_at(min_lon) - @projection.x_at(-180)) / (max_x - min_x)
+    else
+      @knp_dx = (@projection.x_at(max_lon) - @projection.x_at(min_lon)) / (max_x - min_x)
+    end
+    @knp_dy = (@projection.y_at(max_lat) - @projection.y_at(min_lat)) / (max_y - min_y)
   end
   
   # Calculate latitude of a point at given y-axis coordinate
@@ -623,6 +638,28 @@ class KAPHeader
     end
     return lon 
   end
+
+  # Calculates X-axis pixel coordinate corresponding to a given longitude
+  def x_at(lon)
+    absx = @projection.x_at(lon)
+    #puts "LON: #{lon} -> #{absx}"
+    minx = @projection.x_at(min_lon)
+    #puts "LON: #{min_lon} -> #{minx}"
+    if (crosses_dateline)
+      return min_x + ((absx.abs - minx.abs) / @knp_dx).round
+    else
+      return min_x + ((absx - minx) / @knp_dx).round
+    end
+  end
+  
+  # Calculates Y-axis pixel coordinate corresponding to a given latitude
+  def y_at(lat)
+    absy = @projection.y_at(lat)
+    #puts "LAT: #{lat} -> #{absy}"
+    miny = @projection.y_at(min_lat)
+    #puts "LAT: #{min_lat} -> #{miny}"
+    return max_y - ((absy - miny) / @knp_dy).round
+  end 
   
   # Recalculates the X and Y coordinates so that they reflex the new size
   # Recomputes the needed parameters

@@ -10,8 +10,11 @@ if (RUBY_VERSION.start_with?("1.9"))
 else
   require "mysql"
 end
+require "./util.rb"
 require "./bsb.rb"
 require "./kap.rb"
+require "./ellipsoid.rb"
+require "./projection.rb"
 
 require "./config.rb"
 
@@ -170,10 +173,10 @@ class Chart
     
     # create resized image 
     if (autorotate && @kaps[0].suggest_rotation.abs > $skew_angle) #if the skew is smaller than $skew_angle, we rotate the chart
-      `#{$convert_command} #{jpg_path} -level 5% -resize #{percent}% -rotate #{@kaps[0].suggest_rotation} -depth 8 -colors 32 -type Palette png8:#{output_dir}/#{number}.png`
+#      `#{$convert_command} #{jpg_path} -level 5% -resize #{percent}% -rotate #{@kaps[0].suggest_rotation} -depth 8 -colors 32 -type Palette png8:#{output_dir}/#{number}.png`
       @kaps[0].rotate(@kaps[0].suggest_rotation)
     else
-      `#{$convert_command} #{jpg_path} -level 5% -resize #{percent}% -depth 8 -colors 32 -type Palette png8:#{output_dir}/#{number}.png`
+#      `#{$convert_command} #{jpg_path} -level 5% -resize #{percent}% -depth 8 -colors 32 -type Palette png8:#{output_dir}/#{number}.png`
     end
     
     # create BSB
@@ -186,55 +189,7 @@ class Chart
       file << @kaps[0]
       file.close
       }
-    `#{$imgkap_command} -p NONE -n #{output_dir}/#{number}.png #{output_dir}/#{number}.txt #{output_dir}/#{number}.kap`
-  end
-end
-
-# Utility functions class
-# This class contains constants and methods used for the computations
-class Util
-  # PI
-  PI = 3.1415926535897931160E0
-  # Conversion from degree to radian
-  DEGREE = PI / 180.0
-  # Conversion from radian to degree
-  RADIAN = 180.0 / PI
-  # Nautical mile in meters
-  NAUTICAL_MILE = 1852
-  
-  # Distance in meters
-  def Util.distance_meters(lat_a, long_a, lat_b, long_b)
-    return Util.distance(lat_a, long_a, lat_b, long_b) * RADIAN * 60 * Util::NAUTICAL_MILE 
-  end
-  
-  # Great Circle Distance
-  # arguments in radians
-  # taken from gc.rb
-  def Util.distance(lat_a,long_a,lat_b,long_b)
-    distance = Math.acos( Math.cos(lat_a) * Math.cos(lat_b) * Math.cos(diff_long(long_a,long_b)) + Math.sin(lat_a) * Math.sin(lat_b))
-    return distance 
-  end
-  
-  private
-  # long diff
-  # taken from gc.rb
-  def Util.diff_long(longS, longD)
-    longS = longS.to_f 
-    longD = longD.to_f 
-    
-    if (longS.abs + longD.abs) <= PI
-      diff = longD - longS
-      
-    elsif (longS.abs + longD.abs) > PI
-      if longS > 0 && longD < 0  # heading E
-        diff = 2.0 * PI + (longD - longS)
-      elsif longS < 0 && longD > 0  # heading W
-        diff = (longD - longS) - 2.0 * PI
-      elsif (longS > 0 && longD > 0 )||( longS < 0 && longD < 0)
-         diff = longD - longS
-      end
-    end
-    return diff
+#    `#{$imgkap_command} -p NONE -n #{output_dir}/#{number}.png #{output_dir}/#{number}.txt #{output_dir}/#{number}.kap`
   end
 end
 
@@ -247,9 +202,10 @@ begin
   chart = Chart.new
   chart.produce(37112, 100, true)
   chart.kaps[0].check
-  puts chart.kaps[0].lat_at_y(chart.kaps[0].ref[0].y)
-  puts chart.kaps[0].lon_at_x(chart.kaps[0].ref[0].x)
-  puts chart.kaps[0].ref[0].inspect
+  #puts chart.kaps[0].lat_at_y(chart.kaps[0].ref[0].y)
+  #puts chart.kaps[0].lon_at_x(chart.kaps[0].ref[0].x)
+  test_getxy
+  puts chart.kaps[0].inspect
   
 rescue Mysql::Error => e
   puts "Error code: #{e.errno}"
