@@ -200,11 +200,16 @@ begin
   #puts "Server version: " + $dbh.get_server_info
   
   chart = Chart.new
-  chart.produce(37112, 100, true)
+  chart.produce(37112, 30, true)
   chart.kaps[0].check
   #puts chart.kaps[0].lat_at_y(chart.kaps[0].ref[0].y)
   #puts chart.kaps[0].lon_at_x(chart.kaps[0].ref[0].x)
-  test_getxy
+  #puts chart.kaps[0].x_at(chart.kaps[0].ref[3].longitude)
+  #puts chart.kaps[0].y_at(chart.kaps[0].ref[3].latitude)
+  puts chart.kaps[0].x_at(1.25)
+  puts chart.kaps[0].y_at(50.0)
+  puts chart.kaps[0].lon_at(3386)
+  puts chart.kaps[0].lat_at(2585)
   puts chart.kaps[0].inspect
   
 rescue Mysql::Error => e

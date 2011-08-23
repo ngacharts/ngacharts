@@ -14,7 +14,7 @@ class Projection
 
   # Default initializer  
   def initialize
-    @ellipsoid = MeanSphere.new #Probably the most common, so we use it as default  
+    @ellipsoid = WGS84.new #Probably the most common, so we use it as default  
   end
   
   # Latitude for the given Y coordinate. Input has to be netered in meters from [0,0]
@@ -47,6 +47,16 @@ class Mercator < Projection
   
   # Y coordinate (in meters) for the given latitude implementation for Mercator projection
   def y_at(lat)
-    return ellipsoid.a / 2 * Math.log((1 + Math.sin(lat * Util::DEGREE)) / (1 - Math.sin(lat * Util::DEGREE)))
+    return ellipsoid.a * Math.log((1 + Math.sin(lat * Util::DEGREE)) / Math.cos(lat * Util::DEGREE))
+  end
+  
+  # Latitude for the given Y coordinate. Input has to be netered in meters from [0,0]
+  def lat_at(y)
+    return Math.atan(Math.sinh(y / ellipsoid.a)) * Util::RADIAN
+  end
+  
+  # Longitude for the given X coordinate. Input has to be netered in meters from [0,0]
+  def lon_at(x)
+    return x / ellipsoid.a * Util::RADIAN
   end
 end

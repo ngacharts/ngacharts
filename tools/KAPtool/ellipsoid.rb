@@ -65,11 +65,13 @@ class Ellipsoid
       sinSigma = Math.sqrt((cosU2 * sinLambda) * (cosU2 * sinLambda) + (cosU1 * sinU2 - sinU1 * cosU2 * cosLambda) * (cosU1 * sinU2 - sinU1 * cosU2 * cosLambda))
       if (sinSigma==0) then return 0 end # coincident points
       cosSigma = sinU1 * sinU2 + cosU1 * cosU2 * cosLambda
+      #puts cosSigma
       sigma = Math.atan2(sinSigma, cosSigma)
+      #puts sigma
       sinAlpha = cosU1 * cosU2 * sinLambda / sinSigma
       cosSqAlpha = 1 - sinAlpha * sinAlpha
       cos2SigmaM = cosSigma - 2 * sinU1 * sinU2 / cosSqAlpha
-      if (cos2SigmaM) then cos2SigmaM = 0 end  # equatorial line: cosSqAlpha=0 (§6)
+      if (cosSqAlpha == 0.0) then cos2SigmaM = 0 end  # equatorial line: cosSqAlpha=0 (§6)
       c = f / 16 * cosSqAlpha * (4 + f * (4 - 3 * cosSqAlpha))
       lambdaP = lambda
       lambda = l + (1 - c) * f * sinAlpha * (sigma + c * sinSigma * (cos2SigmaM + c * cosSigma * (-1 + 2 * cos2SigmaM * cos2SigmaM)))
@@ -103,7 +105,7 @@ class WGS84 < Ellipsoid
   # Default initializer, sets parameters of the ellipsoid
   def initialize
     @a = 6378137.0
-    @b = 6356752.3142
+    @b = 6356752.314245
     @f = 1/298.257223563
   end
 end

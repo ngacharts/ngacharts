@@ -596,47 +596,49 @@ class KAPHeader
   
   # Calculates meters per pixel value
   def compute_dxdy
-    #Great circle computation
+    #Great circle computation (real meters to pixel)
     #@knp_dx = Util.distance_meters(min_lat * Util::DEGREE, min_lon * Util::DEGREE, min_lat * Util::DEGREE, max_lon * Util::DEGREE) / (max_x - min_x)
     #@knp_dy = Util.distance_meters(min_lat * Util::DEGREE, min_lon * Util::DEGREE, max_lat * Util::DEGREE, min_lon * Util::DEGREE) / (max_y - min_y) #TODO - Should this be computed at PP and in the middle of the other axis?
-    #Carthesian computation
+    #Carthesian computation (Mercator projection meters to pixel)
     if (crosses_dateline)
       @knp_dx = (@projection.x_at(180) - @projection.x_at(max_lon) + @projection.x_at(min_lon) - @projection.x_at(-180)) / (max_x - min_x)
     else
       @knp_dx = (@projection.x_at(max_lon) - @projection.x_at(min_lon)) / (max_x - min_x)
     end
     @knp_dy = (@projection.y_at(max_lat) - @projection.y_at(min_lat)) / (max_y - min_y)
+    #Carthesian computation using Vicenty formula (real meters to pixel)
+    #@knp_dx = @projection.ellipsoid.vicenty_distance(min_lat, min_lon, min_lat, max_lon) / (max_x - min_x)
+    #@knp_dy = @projection.ellipsoid.vicenty_distance(min_lat, min_lon, max_lat, min_lon) / (max_y - min_y)
+    #puts @knp_dx
+    #puts @knp_dy
   end
   
   # Calculate latitude of a point at given y-axis coordinate
   # The algorithm hates any skew in the chart image and the accouracy deteriorates with the skew increasing.
   # If your chart is skewed or not mercator with those nice right angles between parallels and meridians, foorget about it.
   # The algorithm is simplified for our needs and uses the most extreme REF points in anticipation, that the chart is unskewed and rectangular, to achieve higher local precission, REF points as close as possible to the target coordinates should be used.
-  def lat_at_y(y)
-    yres = (max_lat - min_lat) / (max_y - min_y)
-    return min_lat + yres * (max_y - y)
+  def lat_at(y)
+    miny = @projection.y_at(min_lat)
+    puts miny
+    maxy = @projection.y_at(max_lat)
+    puts maxy
+    ym = maxy - (y - min_y).to_f / (max_y - min_y) * (maxy - miny)
+    puts ym
+    return @projection.lat_at(ym)
   end
   
   # Calculate longitude of a point at given x-axis coordinate
   # The algorithm hates any skew in the chart image and the accouracy deteriorates with the skew increasing.
   # If your chart is skewed or not mercator with those nice right angles between parallels and meridians, foorget about it.
   # The algorithm is simplified for our needs and uses the most extreme REF points in anticipation, that the chart is unskewed and rectangular, to achieve higher local precission, REF points as close as possible to the target coordinates should be used.
-  def lon_at_x(x)
-    if (!crosses_dateline)
-      xres = (max_lon - min_lon) / (max_x - min_x)
-      lon = min_lon + xres * (x - min_x)
-    else # chart crosses the date line
-      xres = (360 - max_lon + min_lon) / (max_x - min_x)
-      lon = max_lon + xres * (x - min_x)
-    end
-    if (lon < -180)
-      lon += 360
-    else
-      if (lon > 180)
-        lon -= 360
-      end
-    end
-    return lon 
+  def lon_at(x)
+    minx = @projection.x_at(min_lon)
+    #puts minx
+    maxx = @projection.x_at(max_lon)
+    #puts maxx
+    xm = minx + (x - min_x).to_f / (max_x - min_x) * (maxx - minx)
+    #puts xm
+    return @projection.lon_at(xm)
   end
 
   # Calculates X-axis pixel coordinate corresponding to a given longitude
@@ -645,20 +647,22 @@ class KAPHeader
     #puts "LON: #{lon} -> #{absx}"
     minx = @projection.x_at(min_lon)
     #puts "LON: #{min_lon} -> #{minx}"
-    if (crosses_dateline)
-      return min_x + ((absx.abs - minx.abs) / @knp_dx).round
-    else
-      return min_x + ((absx - minx) / @knp_dx).round
-    end
+    maxx = @projection.x_at(max_lon)
+    #puts "LON: #{max_lon} -> #{maxx}"
+    if(absx == minx) then return min_x end
+    return min_x + ((absx - minx) / (maxx - minx) * (max_x - min_x)).round #TODO: dateline dependent?
   end
   
   # Calculates Y-axis pixel coordinate corresponding to a given latitude
   def y_at(lat)
     absy = @projection.y_at(lat)
-    #puts "LAT: #{lat} -> #{absy}"
+    puts "LAT: #{lat} -> #{absy}"
     miny = @projection.y_at(min_lat)
-    #puts "LAT: #{min_lat} -> #{miny}"
-    return max_y - ((absy - miny) / @knp_dy).round
+    puts "LAT: #{min_lat} -> #{miny}"
+    maxy = @projection.y_at(max_lat)
+    puts "LAT: #{max_lat} -> #{maxy}"
+    if(absy == miny) then return max_y end
+    return max_y - ((absy - miny) / (maxy - miny) * (max_y - min_y)).round
   end 
   
   # Recalculates the X and Y coordinates so that they reflex the new size

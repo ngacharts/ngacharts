@@ -431,9 +431,9 @@ def test_getxy
   k.ref << r
   k.compute_dxdy
   puts k.inspect
-  puts k.x_at (179.99999)
+  puts k.x_at (179.1)
   puts k.y_at (0)
-  puts k.x_at (-179.99999)
+  puts k.x_at (-178.99999)
   puts k.y_at (0)
   
   k = KAPHeader.new
@@ -471,5 +471,5 @@ def test_getxy
 end
 
 #test_getxy
-el = WGS72.new
-puts el.vicenty_distance(89.0, 0.0, 89.0, 1.0/60)
+el = WGS84.new
+puts el.vicenty_distance(0.0, 0.0, 50.196666666667, 0.0)
