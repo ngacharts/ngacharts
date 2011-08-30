@@ -1,12 +1,13 @@
 #############################################################################################################
 ##### Create KAP tables
 DROP TABLE IF EXISTS `ocpn_nga_kap`;
+
 CREATE TABLE IF NOT EXISTS `ocpn_nga_kap` (
   `kap_id` int(11) NOT NULL auto_increment,
-  `number` mediumint(9) NOT NULL,
+  `number` mediumint(9) unsigned NOT NULL,
   `is_main` bit(1) NOT NULL default 1,
-  `status_id` tinyint(4) default 0,
-  `scale` mediumint(9) NOT NULL,
+  `status_id` tinyint(4) unsigned default '0',
+  `scale` mediumint(9) unsigned NOT NULL,
   `title` text NOT NULL,
   `NU` varchar(7) default NULL,
   `GD` varchar(50) default NULL,
@@ -18,7 +19,7 @@ CREATE TABLE IF NOT EXISTS `ocpn_nga_kap` (
   `DTMy` double default NULL,
   `DTMdat` varchar(50) default NULL,
   `changed` timestamp NOT NULL default CURRENT_TIMESTAMP,
-  `changed_by` bigint(20) NOT NULL,
+  `changed_by` bigint(20) unsigned NOT NULL,
   `active` bit(1) NOT NULL default 1,
   `locked` timestamp NULL default NULL,
   `bsb_type` enum('BASE','INSET') default NULL,
@@ -27,14 +28,15 @@ CREATE TABLE IF NOT EXISTS `ocpn_nga_kap` (
   `UN_other` varchar(50) default NULL,
   `SD_other` varchar(50) default NULL,
   `DTMdat_other` varchar(50) default NULL,
-  `locked_by` int(5) default NULL,
+  `locked_by` int(5) unsigned default NULL,
   `comments` text,
   `noPP` int(1) unsigned default NULL,
   `noDTM` int(1) unsigned default NULL,
   `kap_generated` timestamp NULL default NULL,
   PRIMARY KEY  (`kap_id`),
   KEY `number` (`number`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=8272 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
+
 
 DROP TABLE IF EXISTS `ocpn_nga_kap_point`;
 CREATE TABLE IF NOT EXISTS `ocpn_nga_kap_point` (
@@ -51,7 +53,7 @@ CREATE TABLE IF NOT EXISTS `ocpn_nga_kap_point` (
   `active` bit(1) NOT NULL default 1,
   PRIMARY KEY  (`point_id`),
   KEY `kap_id` (`kap_id`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=165 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 
 DROP TABLE IF EXISTS `ocpn_nga_status`;
@@ -60,7 +62,7 @@ CREATE TABLE IF NOT EXISTS `ocpn_nga_status` (
   `description` varchar(255) NOT NULL,
   `status_usage` set('CHART','KAP','POINT') NOT NULL default 'CHART',
   PRIMARY KEY  (`status_id`)
-) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=14 ;
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
 
 #############################################################################################################
 ##### Fill in ocpn_nga_status with the default chart states
