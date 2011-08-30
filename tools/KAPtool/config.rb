@@ -36,5 +36,13 @@ $convert_command = "\"C:\\Program Files\\GraphicsMagick-1.3.12-Q16\\gm.exe\" con
 # ImgKAP
 $imgkap_command = "C:\\work\\opencpn\\ngacharts\\tools\\imgkap.exe" # "imgkap"
 
+# KAP production parameters
+
 # Don't rotate charts if they look skewed less than $skew_angle degrees
 $skew_angle = 0.1
+
+# The scaled-down size of the produced KAPs
+$kap_size_percent = 30
+
+# Whether to rotate chart images as part of KAP production
+$kap_autorotate = true

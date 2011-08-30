@@ -32,7 +32,18 @@ class Chart
   def initialize
     @kaps = Array.new
   end
-  
+
+  # Generates the 'BASE' KAPs for all the newly calibrated charts
+  def Chart.process_new_base_calibrations
+    res = $dbh.query("SELECT number FROM ocpn_nga_charts_with_params WHERE status_id IN (1, 2, 3) AND kap_generated IS NULL AND North IS NOT NULL AND South IS NOT NULL AND East IS NOT NULL AND West IS NOT NULL")
+
+    while row = res.fetch_hash do
+      puts "Processing chart #{row["number"]}"
+      chart = Chart.new
+      chart.produce(row["number"], $kap_size_percent, $kap_autorotate)
+    end
+  end
+    
   # Loads the chart from the database
   # TODO: Now it simplifies everything for testing and has to be rewritten for real world use
   def load_from_db #TODO - now we load it simply for phase 1 - from the view, has to be redone to actually work well
@@ -157,6 +168,8 @@ class Chart
     end
 
     res.free
+    res = $dbh.query("UPDATE ocpn_nga_kap SET kap_generated = CURRENT_TIMESTAMP() WHERE bsb_type = 'BASE' AND number=#{@number}")
+    res.free
   end
   
   # Produces the chart
@@ -199,18 +212,17 @@ begin
   # get server version string and display it
   #puts "Server version: " + $dbh.get_server_info
   
-  chart = Chart.new
-  chart.produce(37112, 30, true)
-  chart.kaps[0].check
+  Chart.process_new_base_calibrations
+
   #puts chart.kaps[0].lat_at_y(chart.kaps[0].ref[0].y)
   #puts chart.kaps[0].lon_at_x(chart.kaps[0].ref[0].x)
   #puts chart.kaps[0].x_at(chart.kaps[0].ref[3].longitude)
   #puts chart.kaps[0].y_at(chart.kaps[0].ref[3].latitude)
-  puts chart.kaps[0].x_at(1.25)
-  puts chart.kaps[0].y_at(50.0)
-  puts chart.kaps[0].lon_at(3386)
-  puts chart.kaps[0].lat_at(2585)
-  puts chart.kaps[0].inspect
+  #puts chart.kaps[0].x_at(1.25)
+  #puts chart.kaps[0].y_at(50.0)
+  #puts chart.kaps[0].lon_at(3386)
+  #puts chart.kaps[0].lat_at(2585)
+  #puts chart.kaps[0].inspect
   
 rescue Mysql::Error => e
   puts "Error code: #{e.errno}"
