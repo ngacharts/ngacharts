@@ -1,4 +1,92 @@
 #############################################################################################################
+##### Create KAP tables
+DROP TABLE IF EXISTS `ocpn_nga_kap`;
+CREATE TABLE IF NOT EXISTS `ocpn_nga_kap` (
+  `kap_id` int(11) NOT NULL auto_increment,
+  `number` mediumint(9) NOT NULL,
+  `is_main` bit(1) NOT NULL default '1',
+  `status_id` tinyint(4) default '0',
+  `scale` mediumint(9) NOT NULL,
+  `title` text NOT NULL,
+  `NU` varchar(7) default NULL,
+  `GD` varchar(50) default NULL,
+  `PR` varchar(50) default NULL,
+  `PP` double default NULL,
+  `UN` varchar(50) default NULL,
+  `SD` varchar(50) default NULL,
+  `DTMx` double default NULL,
+  `DTMy` double default NULL,
+  `DTMdat` varchar(50) default NULL,
+  `changed` timestamp NOT NULL default CURRENT_TIMESTAMP,
+  `changed_by` bigint(20) NOT NULL,
+  `active` bit(1) NOT NULL default '1',
+  `locked` timestamp NULL default NULL,
+  `bsb_type` enum('BASE','INSET') default NULL,
+  `GD_other` varchar(50) default NULL,
+  `PR_other` varchar(50) default NULL,
+  `UN_other` varchar(50) default NULL,
+  `SD_other` varchar(50) default NULL,
+  `DTMdat_other` varchar(50) default NULL,
+  `locked_by` int(5) default NULL,
+  `comments` text,
+  `noPP` int(1) unsigned default NULL,
+  `noDTM` int(1) unsigned default NULL,
+  `kap_generated` timestamp NULL default NULL,
+  PRIMARY KEY  (`kap_id`),
+  KEY `number` (`number`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=8272 ;
+
+DROP TABLE IF EXISTS `ocpn_nga_kap_point`;
+CREATE TABLE IF NOT EXISTS `ocpn_nga_kap_point` (
+  `point_id` int(11) NOT NULL auto_increment,
+  `kap_id` int(11) NOT NULL,
+  `latitude` double default NULL,
+  `longitude` double default NULL,
+  `x` int(11) default NULL,
+  `y` int(11) default NULL,
+  `point_type` set('PLY','REF','CROP') default NULL,
+  `created_by` bigint(20) NOT NULL,
+  `created` timestamp NOT NULL default CURRENT_TIMESTAMP,
+  `sequence` tinyint(4) NOT NULL,
+  `active` bit(1) NOT NULL default '1',
+  PRIMARY KEY  (`point_id`),
+  KEY `kap_id` (`kap_id`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=165 ;
+
+
+DROP TABLE IF EXISTS `ocpn_nga_status`;
+CREATE TABLE IF NOT EXISTS `ocpn_nga_status` (
+  `status_id` tinyint(3) unsigned NOT NULL auto_increment,
+  `description` varchar(255) NOT NULL,
+  `status_usage` set('CHART','KAP','POINT') NOT NULL default 'CHART',
+  PRIMARY KEY  (`status_id`)
+) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=14 ;
+
+#############################################################################################################
+##### Fill in ocpn_nga_status with the default chart states
+INSERT INTO `ocpn_nga_status` (`status_id`, `description`, `status_usage`) VALUES
+(1, 'Rectangular, doable in Phase 1', 'CHART'),
+(2, 'Rectangular, partly doable in Phase 1 - With rectangular insets', 'CHART'),
+(3, 'Rectangular, partly doable in Phase 1 - With non-rectangular insets', 'CHART'),
+(4, 'Rectangular, not doable in Phase 1 because of the 90 degrees skew', 'CHART'),
+(5, 'Rectangular, not doable in Phase 1 because of the scan skew', 'CHART'),
+(6, 'Rectangular, not doable in Phase 1 because of the warp or bevel', 'CHART'),
+(7, 'Rectangular, not doable in Phase 1 because the corners are not visible on cutouts', 'CHART'),
+(8, 'Rectangular, not doable in Phase 1 because of special PLYs needed', 'CHART'),
+(9, 'Not-doable in phase 1 - Composed of rectangular charts', 'CHART'),
+(10, 'Not-doable in phase 1 - Composed of non-rectangular charts', 'CHART'),
+(11, 'Non-rectangular', 'CHART'),
+(12, 'Broken in other way', 'CHART'),
+(13, 'Bad download', 'CHART');
+
+#############################################################################################################
+##### Fill in ocpn_nga_kap with the main plans for each chart
+SET @timestamp = NOW();
+SET @user = 1;
+INSERT INTO ocpn_nga_kap (number, is_main, status_id, locked, scale, title, changed, changed_by, active, NU, bsb_type)
+   SELECT number, 1, 0, 0, scale, title, @timestamp, @user, 1, CONVERT(number, CHAR), 'BASE' FROM ocpn_nga_charts;
+
+#############################################################################################################
 ##### Complete info about the cells
 CREATE OR REPLACE VIEW ocpn_nga_charts_with_params
 AS
@@ -22,13 +110,6 @@ FROM ocpn_nga_charts c
    LEFT JOIN ocpn_nga_kap_point pne ON (k.kap_id = pne.kap_id AND pne.active=1 AND pne.sequence=3 AND pne.point_type='REF')
    LEFT JOIN ocpn_nga_kap_point pse ON (k.kap_id = pse.kap_id AND pse.active=1 AND pse.sequence=4 AND pse.point_type='REF')
    LEFT JOIN ocpn_nga_kap_point pnw ON (k.kap_id = pnw.kap_id AND pnw.active=1 AND pnw.sequence=2 AND pnw.point_type='REF')
-
-#############################################################################################################
-##### Fill in ocpn_nga_kap with the main plans for each chart
-SET @timestamp = NOW();
-SET @user = 1;
-INSERT INTO ocpn_nga_kap (number, is_main, status_id, locked, scale, title, changed, changed_by, active, NU)
-   SELECT number, 1, 0, 0, scale, title, @timestamp, @user, 1, CONVERT(number, CHAR) FROM ocpn_nga_charts;
 
 #############################################################################################################
 ##### Save calibration points for a chart (Works just in Phase 1, where there is 1 KAP per chart)
