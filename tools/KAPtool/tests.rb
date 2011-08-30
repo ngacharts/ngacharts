@@ -431,9 +431,9 @@ def test_getxy
   k.ref << r
   k.compute_dxdy
   puts k.inspect
-  puts k.x_at (179.1)
+  puts k.x_at (179.9)
   puts k.y_at (0)
-  puts k.x_at (-178.99999)
+  puts k.x_at (-179.99999)
   puts k.y_at (0)
   
   k = KAPHeader.new
@@ -468,8 +468,96 @@ def test_getxy
   puts k.y_at (0)
   puts k.x_at (10)
   puts k.y_at (-10)
+
+  #25001
+  k = KAPHeader.new
+  k.bsb_ra = [7360, 5699]
+  r = REF.new
+  r.x = 168
+  r.y = 640
+  r.latitude = 18.766666666667
+  r.longitude = -72.333333333333
+  k.ref << r
+  r = REF.new
+  r.x = 171
+  r.y = 5325
+  r.latitude = 10.000000000000
+  r.longitude = -72.333333333333
+  k.ref << r
+  r = REF.new
+  r.x = 7094
+  r.y = 5325
+  r.latitude = 10.000000000000
+  r.longitude = -59.000000000000
+  k.ref << r
+  r = REF.new
+  r.x = 7094
+  r.y = 640
+  r.latitude = 18.766666666667
+  r.longitude = -59.000000000000
+  k.ref << r
+  k.compute_dxdy
+  puts k.inspect
+  Util.print_lon k.lon_at (1379)
+  Util.print_lat k.lat_at (1057)
+  
+  #25001 - different REF points
+  k = KAPHeader.new
+  k.bsb_ra = [7360, 5699]
+  r = REF.new
+  r.x = 1379
+  r.y = 1058
+  r.latitude = 18.000000000000
+  r.longitude = -70.000000000000
+  k.ref << r
+  r = REF.new
+  r.x = 2244
+  r.y = 2676
+  r.latitude = 14.999980000000
+  r.longitude = -68.336641666667
+  k.ref << r
+  r = REF.new
+  r.x = 4844
+  r.y = 1056
+  r.latitude = 18.003328333333
+  r.longitude = -63.331441666667
+  k.ref << r
+  r = REF.new
+  r.x = 4844
+  r.y = 2672
+  r.latitude = 15.007310000000
+  r.longitude = -63.331690000000
+  k.ref << r
+  k.compute_dxdy
+  puts k.inspect
+  Util.print_lon k.lon_at (168)
+  Util.print_lat k.lat_at (641)
+  
+  #43342 - TMERC
+  k = KAPHeader.new
+  k.projection = TransverseMercator.new
+  k.bsb_ra = [6640, 5760]
+  r = REF.new
+  r.x = 6238
+  r.y = 618
+  r.latitude = 59.094445000000
+  r.longitude = 5.916666666667
+  k.ref << r
+  r = REF.new
+  r.x = 311
+  r.y = 5384
+  r.latitude = 58.924666666667
+  r.longitude = 5.507500000000
+  k.ref << r
+  k.compute_dxdy
+  puts k.inspect
+  
+  Util.print_lon (k.lon_at(3272, 2620))
+  Util.print_lat (k.lat_at(3272, 2620))
+  puts k.x_at(59.0, 5.66666666666666)
+  puts k.y_at(59.0, 5.66666666666666)
 end
 
-#test_getxy
-el = WGS84.new
-puts el.vicenty_distance(0.0, 0.0, 50.196666666667, 0.0)
+test_getxy
+#el = WGS84.new
+#puts el.vicenty_distance(0.0, 0.0, 50.196666666667, 0.0)

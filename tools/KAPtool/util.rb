@@ -51,4 +51,22 @@ class Util
     end
     return diff
   end
+
+  # Prints the human readable format of latitude
+  def Util.print_lat(degrees)
+    d = degrees.abs.floor
+    m = (degrees.abs - d) * 60
+    h = 'N'
+    if (degrees < 0.0) then h = 'S' end
+    puts sprintf("%i d %.3f m %s", d, m, h)
+  end
+  
+  # Prints the human readable format of longitude
+  def Util.print_lon(degrees)
+    d = degrees.abs.floor
+    m = (degrees.abs - d) * 60
+    h = 'E'
+    if (degrees < 0.0) then h = 'W' end
+    puts sprintf("%i d %.3f m %s", d, m, h)
+  end
 end
