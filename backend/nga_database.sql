@@ -4,8 +4,8 @@ DROP TABLE IF EXISTS `ocpn_nga_kap`;
 CREATE TABLE IF NOT EXISTS `ocpn_nga_kap` (
   `kap_id` int(11) NOT NULL auto_increment,
   `number` mediumint(9) NOT NULL,
-  `is_main` bit(1) NOT NULL default '1',
-  `status_id` tinyint(4) default '0',
+  `is_main` bit(1) NOT NULL default 1,
+  `status_id` tinyint(4) default 0,
   `scale` mediumint(9) NOT NULL,
   `title` text NOT NULL,
   `NU` varchar(7) default NULL,
@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS `ocpn_nga_kap` (
   `DTMdat` varchar(50) default NULL,
   `changed` timestamp NOT NULL default CURRENT_TIMESTAMP,
   `changed_by` bigint(20) NOT NULL,
-  `active` bit(1) NOT NULL default '1',
+  `active` bit(1) NOT NULL default 1,
   `locked` timestamp NULL default NULL,
   `bsb_type` enum('BASE','INSET') default NULL,
   `GD_other` varchar(50) default NULL,
@@ -48,7 +48,7 @@ CREATE TABLE IF NOT EXISTS `ocpn_nga_kap_point` (
   `created_by` bigint(20) NOT NULL,
   `created` timestamp NOT NULL default CURRENT_TIMESTAMP,
   `sequence` tinyint(4) NOT NULL,
-  `active` bit(1) NOT NULL default '1',
+  `active` bit(1) NOT NULL default 1,
   PRIMARY KEY  (`point_id`),
   KEY `kap_id` (`kap_id`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8 AUTO_INCREMENT=165 ;
@@ -84,7 +84,7 @@ INSERT INTO `ocpn_nga_status` (`status_id`, `description`, `status_usage`) VALUE
 SET @timestamp = NOW();
 SET @user = 1;
 INSERT INTO ocpn_nga_kap (number, is_main, status_id, locked, scale, title, changed, changed_by, active, NU, bsb_type)
-   SELECT number, 1, 0, 0, scale, title, @timestamp, @user, 1, CONVERT(number, CHAR), 'BASE' FROM ocpn_nga_charts;
+   SELECT number, 1, NULL, NULL, scale, title, @timestamp, @user, 1, CONVERT(number, CHAR), 'BASE' FROM ocpn_nga_charts;
 
 #############################################################################################################
 ##### Complete info about the cells
