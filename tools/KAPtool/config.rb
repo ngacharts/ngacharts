@@ -20,6 +20,9 @@ $db_password = "root"
 
 # Data paths
 
+# Lock file path
+$lock_path = "/tmp/lock"
+
 # Path to the original full size NGA image 
 # You can use {CHART_NUMBER} which will be substituted with the corresponding chart number while it's being processed
 $jpg_path = "C:\\work\\opencpn\\ngacharts\\tools\\{CHART_NUMBER}.jpg"
