@@ -209,6 +209,18 @@ end
 begin
   # connect to the MySQL server
   $dbh = Mysql.connect($db_host, $db_username, $db_password, $db_database)
+  
+  # check the lock nd exit if it exists
+  if (File.exists?($lock_path))
+    puts "KAPTool already running, exiting."
+    Process.exit
+  end
+  f = File.new($lock_path,"w")
+  begin
+    f.puts "Locked at #{Time.now.asctime}"
+  ensure
+    f.close
+  end
   # get server version string and display it
   #puts "Server version: " + $dbh.get_server_info
   
@@ -223,6 +235,9 @@ begin
   #puts chart.kaps[0].lon_at(3386)
   #puts chart.kaps[0].lat_at(2585)
   #puts chart.kaps[0].inspect
+  
+  # delete lock
+  File.unlink($lock_path)
   
 rescue Mysql::Error => e
   puts "Error code: #{e.errno}"

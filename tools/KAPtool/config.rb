@@ -20,7 +20,7 @@ $db_password = "root"
 
 # Data paths
 
-# Lock file path
+# Lock file path - it's not very smart to run some time consuming operations over the same data at the same time
 $lock_path = "/tmp/lock"
 
 # Path to the original full size NGA image 
