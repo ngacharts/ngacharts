@@ -41,7 +41,7 @@ end
 # Class representing the Mercator projection
 class Mercator < Projection
   # X coordinate (in meters) for the given longitude implementation for Mercator projection
-  def x_at(lat = 0.0, lon)
+  def x_at(lat, lon)
     return ellipsoid.a * lon * Util::DEGREE
   end
   
@@ -51,7 +51,7 @@ class Mercator < Projection
   end
   
   # Latitude for the given Y coordinate. Input has to be entered in meters from [0,0]
-  def lat_at(x = 0, y)
+  def lat_at(x, y)
     return Math.atan(Math.sinh(y / ellipsoid.a)) * Util::RADIAN
   end
   

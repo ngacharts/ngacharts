@@ -204,10 +204,14 @@ class KAPHeader
     height = @bsb_ra[1].to_i
     center_x = width.to_f  / 2
     center_y = height.to_f / 2
-    new_width = (2 * Math.sqrt(center_x**2 + center_y**2) * Math.cos(Math.atan(center_y / center_x) + deg * Util::DEGREE)).round
-    new_height = (2 * Math.sqrt(center_x**2 + center_y**2) * Math.sin(Math.atan(center_y / center_x) - deg * Util::DEGREE)).round
+    new_width = ((2 * Math.sqrt(center_x**2 + center_y**2) * Math.cos(Math.atan(center_y / center_x) + deg * Util::DEGREE)) - width).abs.round + width
+    new_height = ((2 * Math.sqrt(center_x**2 + center_y**2) * Math.sin(Math.atan(center_y / center_x) - deg * Util::DEGREE)) - height).abs.round + height
     xadd = ((new_width - width) / 2).round
+    puts "xadd: #{xadd}"
+    puts "width new: #{new_width} old: #{width}"
     yadd = ((new_height - height) / 2).round
+    puts "yadd: #{yadd}"
+    puts "height new: #{new_height} old: #{height}"
     @ref.each {|ref|
       xxc = ref.x - center_x
       yyc = ref.y - center_y
@@ -485,6 +489,7 @@ class KAPHeader
   # Calculates the value for KNP/PP in case it was not given on the chart 
   # TODO: Are we going to handle it for more projections?
   def compute_pp
+    @knp_pp = "UNKNOWN" # fallback value for other projections
     if (@knp_pr == "MERCATOR")
       @knp_pp = (min_lat + max_lat) / 2
     end
@@ -597,8 +602,8 @@ class KAPHeader
   # Calculates meters per pixel value
   def compute_dxdy
     #Great circle computation (real meters to pixel)
-    #@knp_dx = Util.distance_meters(min_lat * Util::DEGREE, min_lon * Util::DEGREE, min_lat * Util::DEGREE, max_lon * Util::DEGREE) / (max_x - min_x)
-    #@knp_dy = Util.distance_meters(min_lat * Util::DEGREE, min_lon * Util::DEGREE, max_lat * Util::DEGREE, min_lon * Util::DEGREE) / (max_y - min_y) #TODO - Should this be computed at PP and in the middle of the other axis?
+    @knp_dx = Util.distance_meters(min_lat * Util::DEGREE, min_lon * Util::DEGREE, min_lat * Util::DEGREE, max_lon * Util::DEGREE) / (max_x - min_x)
+    @knp_dy = Util.distance_meters(min_lat * Util::DEGREE, min_lon * Util::DEGREE, max_lat * Util::DEGREE, min_lon * Util::DEGREE) / (max_y - min_y) #TODO - Should this be computed at PP and in the middle of the other axis?
     #Carthesian computation (Mercator projection meters to pixel)
     #if (crosses_dateline)
     #  @knp_dx = (@projection.x_at(180) - @projection.x_at(max_lon) + @projection.x_at(min_lon) - @projection.x_at(-180)) / (max_x - min_x)
@@ -607,8 +612,8 @@ class KAPHeader
     #end
     #@knp_dy = (@projection.y_at(max_lat) - @projection.y_at(min_lat)) / (max_y - min_y)
     #Carthesian computation using Vicenty formula (real meters to pixel)
-    @knp_dx = @projection.ellipsoid.vicenty_distance(min_lat, min_lon, min_lat, max_lon) / (max_x - min_x)
-    @knp_dy = @projection.ellipsoid.vicenty_distance(min_lat, min_lon, max_lat, min_lon) / (max_y - min_y)
+    #@knp_dx = @projection.ellipsoid.vicenty_distance(min_lat, min_lon, min_lat, max_lon) / (max_x - min_x)
+    #@knp_dy = @projection.ellipsoid.vicenty_distance(min_lat, min_lon, max_lat, min_lon) / (max_y - min_y)
     #puts @knp_dx
     #puts @knp_dy
   end
@@ -617,7 +622,7 @@ class KAPHeader
   # The algorithm hates any skew in the chart image and the accouracy deteriorates with the skew increasing.
   # If your chart is skewed or not mercator with those nice right angles between parallels and meridians, foorget about it.
   # The algorithm is simplified for our needs and uses the most extreme REF points in anticipation, that the chart is unskewed and rectangular, to achieve higher local precission, REF points as close as possible to the target coordinates should be used.
-  def lat_at(x = 0, y)
+  def lat_at(x, y)
     miny = @projection.y_at(min_lat, min_lon)
     #puts miny
     maxy = @projection.y_at(max_lat, max_lon)
@@ -642,7 +647,7 @@ class KAPHeader
   end
 
   # Calculates X-axis pixel coordinate corresponding to a given longitude
-  def x_at(lat = 0.0, lon)
+  def x_at(lat, lon)
     absx = @projection.x_at(lat, lon)
     #puts "LON: #{lon} -> #{absx}"
     minx = @projection.x_at(lat, min_lon)
@@ -702,7 +707,11 @@ class KAPHeader
       str << ",GD=#{@knp_gd}"
       str << ",PR=#{@knp_pr}"
       str << "\n"
-      str << "    PP=#{sprintf('%.1f', @knp_pp)}"
+      if (@knp_pp.is_a?(Numeric))
+        str << "    PP=#{sprintf('%.1f', @knp_pp)}"
+      else 
+        str << "    PP=#{@knp_pp}" 
+      end
       str << ",PI=#{@knp_pi}"
       if(@knp_sp.class == "Array")
         if (@knp_sp.length == 2)

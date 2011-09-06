@@ -35,7 +35,7 @@ class Chart
 
   # Generates the 'BASE' KAPs for all the newly calibrated charts
   def Chart.process_new_base_calibrations
-    res = $dbh.query("SELECT number FROM ocpn_nga_charts_with_params WHERE status_id IN (1, 2, 3) AND kap_generated IS NULL AND North IS NOT NULL AND South IS NOT NULL AND East IS NOT NULL AND West IS NOT NULL")
+    res = $dbh.query("SELECT number FROM ocpn_nga_charts_with_params WHERE status_id IN (1, 2, 3, 14) AND kap_generated IS NULL AND North IS NOT NULL AND South IS NOT NULL AND East IS NOT NULL AND West IS NOT NULL AND Xsw IS NOT NULL AND Ysw IS NOT NULL AND Xnw IS NOT NULL AND Ynw IS NOT NULL AND Xne IS NOT NULL AND Yne AND Xse IS NOT NULL AND Yse IS NOT NULL")
 
     while row = res.fetch_hash do
       puts "Processing chart #{row["number"]}"
@@ -168,8 +168,7 @@ class Chart
     end
 
     res.free
-    res = $dbh.query("UPDATE ocpn_nga_kap SET kap_generated = CURRENT_TIMESTAMP() WHERE bsb_type = 'BASE' AND number=#{@number}")
-    res.free
+#    $dbh.query("UPDATE ocpn_nga_kap SET kap_generated = CURRENT_TIMESTAMP() WHERE bsb_type = 'BASE' AND number=#{@number}")
   end
   
   # Produces the chart
@@ -180,16 +179,27 @@ class Chart
     # load from db
     @number =  number
     load_from_db
-    
+
+    rotation = @kaps[0].suggest_rotation
+    puts "Suggested rotation: #{rotation}";
+    puts "Original calibration:"
+    puts @kaps[0].inspect
+        
     # resize header
-    @kaps[0].resize_to_percent(percent)
+    #@kaps[0].resize_to_percent(percent)
     
     # create resized image 
-    if (autorotate && @kaps[0].suggest_rotation.abs > $skew_angle) #if the skew is smaller than $skew_angle, we rotate the chart
-#      `#{$convert_command} #{jpg_path} -level 5% -resize #{percent}% -rotate #{@kaps[0].suggest_rotation} -depth 8 -colors 32 -type Palette png8:#{output_dir}/#{number}.png`
-      @kaps[0].rotate(@kaps[0].suggest_rotation)
+    if (autorotate && rotation.abs > $skew_angle) #if the skew is smaller than $skew_angle, we rotate the chart
+      @kaps[0].rotate(rotation)
+      puts "Rotated kap:"
+      puts @kaps[0].inspect
+      @kaps[0].resize_to_percent(percent)
+      puts "Resized kap:"
+      puts @kaps[0].inspect
+      `#{$convert_command} #{jpg_path} -limit memory 2048MB -level 5% -resize #{percent}% -rotate #{rotation} -despeckle -crop #{@kaps[0].bsb_ra[0]}x#{@kaps[0].bsb_ra[1]}+0+0 -depth 8 -colors 32 -type Palette png8:#{output_dir}/#{number}.png`
     else
-#      `#{$convert_command} #{jpg_path} -level 5% -resize #{percent}% -depth 8 -colors 32 -type Palette png8:#{output_dir}/#{number}.png`
+      @kaps[0].resize_to_percent(percent)
+      `#{$convert_command} #{jpg_path} -limit memory 2048MB -level 5% -resize #{percent}% -despeckle -crop #{@kaps[0].bsb_ra[0]}x#{@kaps[0].bsb_ra[1]}+0+0 -depth 8 -colors 32 -type Palette png8:#{output_dir}/#{number}.png`
     end
     
     # create BSB
@@ -202,14 +212,16 @@ class Chart
       file << @kaps[0]
       file.close
       }
-#    `#{$imgkap_command} -p NONE -n #{output_dir}/#{number}.png #{output_dir}/#{number}.txt #{output_dir}/#{number}.kap`
+    `#{$imgkap_command} -p NONE -n #{output_dir}/#{number}.png #{output_dir}/#{number}.txt #{output_dir}/#{number}.kap`
+    $dbh.query("UPDATE ocpn_nga_kap SET kap_generated = CURRENT_TIMESTAMP() WHERE bsb_type = 'BASE' AND number=#{@number}")
   end
 end
 
 begin
   # connect to the MySQL server
   $dbh = Mysql.connect($db_host, $db_username, $db_password, $db_database)
-  
+  # get server version string and display it
+  #puts "Server version: " + $dbh.get_server_info
   # check the lock nd exit if it exists
   if (File.exists?($lock_path))
     puts "KAPTool already running, exiting."
@@ -221,9 +233,7 @@ begin
   ensure
     f.close
   end
-  # get server version string and display it
-  #puts "Server version: " + $dbh.get_server_info
-  
+
   Chart.process_new_base_calibrations
 
   #puts chart.kaps[0].lat_at_y(chart.kaps[0].ref[0].y)
@@ -235,10 +245,8 @@ begin
   #puts chart.kaps[0].lon_at(3386)
   #puts chart.kaps[0].lat_at(2585)
   #puts chart.kaps[0].inspect
-  
   # delete lock
   File.unlink($lock_path)
-  
 rescue Mysql::Error => e
   puts "Error code: #{e.errno}"
   puts "Error message: #{e.error}"
