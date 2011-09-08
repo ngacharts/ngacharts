@@ -7,6 +7,7 @@
 
 require "./ellipsoid.rb"
 require "./projection.rb"
+require "GPX"
 
 # This class represents the KAP chart header<br/>
 # The chapter numbers refer to IHO standard document S-61: http://88.208.211.37/iho_pubs/standard/S61E.pdf<br/>
@@ -797,6 +798,26 @@ class KAPHeader
     }
     str
   end
+  
+  # Saves the PLY points as a GPX route
+  def ply_to_gpx(filename)
+    gpx = GPX::GPXFile.new
+    rte = GPX::Route.new
+    rte.name = @bsb_nu
+    if (@ply.length == 0)
+      @ref.each {|point|
+        rte.points << point.to_PLY.to_rtept
+        # TODO: the points need probably to be shifted same as the chart 
+      }
+    else
+      @ply.each {|ply|
+        rte.points << ply.to_rtept
+        # TODO: the points need probably to be shifted same as the chart 
+      }
+    end
+    gpx.routes << rte
+    gpx.write(filename)
+  end
 end
 
 
@@ -865,6 +886,14 @@ class PLY
   # Returns formatted text for the header
   def to_s
     "PLY/#{@idx},#{sprintf('%.8f', @latitude)},#{sprintf('%.8f', @longitude)}"
+  end
+  
+  # creates a route point from PLY
+  def to_rtept
+    pt = GPX::Point.new
+    pt.lat = @latitude
+    pt.lon = @longitude
+    return pt
   end
 end
 

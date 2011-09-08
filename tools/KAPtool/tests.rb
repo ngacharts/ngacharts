@@ -558,6 +558,40 @@ def test_getxy
   puts k.y_at(59.0, 5.66666666666666)
 end
 
-test_getxy
+# test for the routines producing the gpx file for PLY points
+def test_plygpx
+  #25001 - different REF points
+  k = KAPHeader.new
+  k.bsb_ra = [7360, 5699]
+  r = REF.new
+  r.x = 1379
+  r.y = 1058
+  r.latitude = 18.000000000000
+  r.longitude = -70.000000000000
+  k.ref << r
+  r = REF.new
+  r.x = 2244
+  r.y = 2676
+  r.latitude = 14.999980000000
+  r.longitude = -68.336641666667
+  k.ref << r
+  r = REF.new
+  r.x = 4844
+  r.y = 1056
+  r.latitude = 18.003328333333
+  r.longitude = -63.331441666667
+  k.ref << r
+  r = REF.new
+  r.x = 4844
+  r.y = 2672
+  r.latitude = 15.007310000000
+  r.longitude = -63.331690000000
+  k.ref << r
+  k.compute_dxdy
+  puts k.inspect
+  k.ply_to_gpx('/tmp/test.gpx')
+end
+
+test_plygpx
 #el = WGS84.new
 #puts el.vicenty_distance(0.0, 0.0, 50.196666666667, 0.0)
