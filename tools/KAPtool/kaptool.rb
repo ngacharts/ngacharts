@@ -213,6 +213,8 @@ class Chart
       file.close
       }
     `#{$imgkap_command} -p NONE -n #{output_dir}/#{number}.png #{output_dir}/#{number}.txt #{output_dir}/#{number}.kap`
+    # save GPX with the boundaries
+    @kaps[0].ply_to_gpx("#{output_dir}/#{number}.gpx")
     $dbh.query("UPDATE ocpn_nga_kap SET kap_generated = CURRENT_TIMESTAMP() WHERE bsb_type = 'BASE' AND number=#{@number}")
   end
 end
