@@ -804,15 +804,26 @@ class KAPHeader
     gpx = GPX::GPXFile.new
     rte = GPX::Route.new
     rte.name = @bsb_nu
+    if (@dtm.nil? || @dtm[0].nil?)
+      cor_lat = 0
+    else
+      cor_lat = sprintf("%.1f", @dtm[0]).to_f / 3600
+    end
+    if (@dtm.nil? || @dtm[1].nil?)
+      cor_lon = 0
+    else
+      cor_lon = sprintf("%.1f", @dtm[1]).to_f / 3600
+    end
     if (@ply.length == 0)
       @ref.each {|point|
-        rte.points << point.to_PLY.to_rtept(sprintf("%.1f", @dtm[0]).to_f / 3600, sprintf("%.1f", @dtm[1]).to_f / 3600)
+        rte.points << point.to_PLY.to_rtept(cor_lat, cor_lon)
       }
     else
       @ply.each {|ply|
         rte.points << ply.to_rtept(sprintf("%.1f", @dtm[0]).to_f / 3600, sprintf("%.1f", @dtm[1]).to_f / 3600)
       }
     end
+    rte.points << rte.points[0]
     gpx.routes << rte
     gpx.write(filename)
   end
