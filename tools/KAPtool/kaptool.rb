@@ -35,7 +35,7 @@ class Chart
 
   # Generates the 'BASE' KAPs for all the newly calibrated charts
   def Chart.process_new_base_calibrations
-    res = $dbh.query("SELECT number FROM ocpn_nga_charts_with_params WHERE status_id IN (1, 2, 3, 14) AND kap_generated IS NULL AND North IS NOT NULL AND South IS NOT NULL AND East IS NOT NULL AND West IS NOT NULL AND Xsw IS NOT NULL AND Ysw IS NOT NULL AND Xnw IS NOT NULL AND Ynw IS NOT NULL AND Xne IS NOT NULL AND Yne AND Xse IS NOT NULL AND Yse IS NOT NULL")
+    res = $dbh.query("SELECT number FROM ocpn_nga_charts_with_params WHERE status_id IN (1, 2, 3, 8, 14) AND kap_generated IS NULL AND North IS NOT NULL AND South IS NOT NULL AND East IS NOT NULL AND West IS NOT NULL AND Xsw IS NOT NULL AND Ysw IS NOT NULL AND Xnw IS NOT NULL AND Ynw IS NOT NULL AND Xne IS NOT NULL AND Yne AND Xse IS NOT NULL AND Yse IS NOT NULL")
 
     while row = res.fetch_hash do
       puts "Processing chart #{row["number"]}"
