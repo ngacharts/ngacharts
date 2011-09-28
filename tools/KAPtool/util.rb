@@ -8,7 +8,7 @@
 # This class contains constants and methods used for the computations
 class Util
   # PI
-  #PI = 3.1415926535897931160E0
+  # PI = 3.1415926535897931160E0
   PI = Math::PI
   # Conversion from degree to radian
   DEGREE = PI / 180.0
