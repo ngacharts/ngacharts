@@ -10,6 +10,7 @@ if (RUBY_VERSION.start_with?("1.9"))
 else
   require "mysql"
 end
+require "optparse"
 require "./util.rb"
 require "./bsb.rb"
 require "./kap.rb"
@@ -235,18 +236,74 @@ begin
   ensure
     f.close
   end
+  
+  options = {}
 
-  Chart.process_new_base_calibrations
+  optparse = OptionParser.new do|opts|
+  # Set a banner, displayed at the top
+  # of the help screen.
+    opts.banner = "Usage: kaptool.rb [options] <chart number>"
+  
+    # Define the options, and what they do
+    options[:verbose] = false
+    opts.on( '-v', '--verbose', 'Output more information' ) do
+      options[:verbose] = true
+    end
+  
+    options[:action] = 'PRODNEW'
+    opts.on( '-a', '--action ACTION', "What to do:\n       PRODNEW - generate all new KAPs from the DB (default)\n       KAP - generate KAP\n       PLY - define polygon\n       PREPROCESS - rotate chart 90/180/270 degrees, create thumbnails, generate corners" ) do|action|
+      options[:action] = action.upcase
+    end
+    
+    options[:polygon] = nil
+    opts.on( '-p', '--polygon FILE', 'Border polygon definition GPX file' ) do|file|
+      options[:polygon] = file
+    end
+  
+    # This displays the help screen, all programs are
+    # assumed to have this option.
+    opts.on( '-h', '--help', 'Display this screen' ) do
+      puts opts
+      exit
+    end
+  end
+  
+  optparse.parse!
 
-  #puts chart.kaps[0].lat_at_y(chart.kaps[0].ref[0].y)
-  #puts chart.kaps[0].lon_at_x(chart.kaps[0].ref[0].x)
-  #puts chart.kaps[0].x_at(chart.kaps[0].ref[3].longitude)
-  #puts chart.kaps[0].y_at(chart.kaps[0].ref[3].latitude)
-  #puts chart.kaps[0].x_at(1.25)
-  #puts chart.kaps[0].y_at(50.0)
-  #puts chart.kaps[0].lon_at(3386)
-  #puts chart.kaps[0].lat_at(2585)
-  #puts chart.kaps[0].inspect
+  if (options[:action] == 'PRODNEW')
+    Chart.process_new_base_calibrations
+  else
+    if (ARGV.length != 1)
+      puts "Usage: kaptool.rb [options] <chart number>"
+      File.unlink($lock_path)
+      exit
+    end
+    
+    ARGV.each do|chart|
+      if (Util::numeric?(chart))
+        puts "Crunching chart #{chart}..."
+        case options[:action]
+        when 'KAP'
+          chart = Chart.new
+          chart.produce(chart, $kap_size_percent, $kap_autorotate)
+        when 'PLY'
+          #TODO: implement...
+        when 'PREPROCESS'
+          chart = Chart.new
+          chart.preprocess(chart)
+        else
+          puts "Action #{options[:action]} unknown, exiting..."
+          File.unlink($lock_path)
+          exit
+        end
+      else
+        puts "Argument #{chart} is not a number, exiting..."
+        File.unlink($lock_path)
+        exit
+      end
+    end
+  end
+
   # delete lock
   File.unlink($lock_path)
 rescue Mysql::Error => e
