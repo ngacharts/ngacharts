@@ -27,6 +27,20 @@ $lock_path = "/tmp/lock"
 # You can use {CHART_NUMBER} which will be substituted with the corresponding chart number while it's being processed
 $jpg_path = "C:\\work\\opencpn\\ngacharts\\tools\\{CHART_NUMBER}.jpg"
 
+# Path to the preprocessed full size NGA image 
+# You can use {CHART_NUMBER} which will be substituted with the corresponding chart number while it's being processed
+$preprocessed_jpg_path = "C:\\work\\opencpn\\ngacharts\\tools\\{CHART_NUMBER}.jpg"
+
+# Path to the thumbnails of the chart images
+# You can use {CHART_NUMBER} which will be substituted with the corresponding chart number while it's being processed
+# You can use {ZOOM_LEVEL} which will be substituted with the zoom level while it's being processed
+$thumbnail_path = "C:\\work\\opencpn\\ngacharts\\tools\\thumbs\\{CHART_NUMBER}_zl{ZOOM_LEVEL}.jpg"
+
+# Path to the corner cut-outs of the chart images
+# You can use {CHART_NUMBER} which will be substituted with the corresponding chart number while it's being processed
+# You can use {CORNER} which will be substituted with the corner id (SE, NE, SW, NW) while it's being processed
+$corner_path = "C:\\work\\opencpn\\ngacharts\\tools\\{CHART_NUMBER}\\{CHART_NUMBER}_{CORNER}.png"
+
 # directory to save all the output
 # You can use {CHART_NUMBER} which will be substituted with the corresponding chart number while it's being processed
 $output_dir = "C:\\work\\opencpn\\ngacharts\\tools\\" #"/tmp/"
