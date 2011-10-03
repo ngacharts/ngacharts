@@ -29,7 +29,7 @@ $jpg_path = "C:\\work\\opencpn\\ngacharts\\tools\\{CHART_NUMBER}.jpg"
 
 # Path to the preprocessed full size NGA image 
 # You can use {CHART_NUMBER} which will be substituted with the corresponding chart number while it's being processed
-$preprocessed_jpg_path = "C:\\work\\opencpn\\ngacharts\\tools\\{CHART_NUMBER}.jpg"
+$preprocessed_jpg_path = "C:\\work\\opencpn\\ngacharts\\tools\\{CHART_NUMBER}_pre.jpg"
 
 # Path to the thumbnails of the chart images
 # You can use {CHART_NUMBER} which will be substituted with the corresponding chart number while it's being processed

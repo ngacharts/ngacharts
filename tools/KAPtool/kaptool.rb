@@ -172,6 +172,46 @@ class Chart
 #    $dbh.query("UPDATE ocpn_nga_kap SET kap_generated = CURRENT_TIMESTAMP() WHERE bsb_type = 'BASE' AND number=#{@number}")
   end
   
+  # Preprocesses the chart
+  # If needed, the chart is rotated by a multiple of 90 degrees
+  # The thumbnails and corner images are generated
+  def preprocess(number)
+    jpg_path = $jpg_path.gsub("{CHART_NUMBER}", number.to_s)
+    preprocessed_jpg_path = $preprocessed_jpg_path.gsub("{CHART_NUMBER}", number.to_s)
+    
+    res = $dbh.query("SELECT * FROM ocpn_nga_charts WHERE number=#{number}")
+
+    while row = res.fetch_hash do
+      puts "Preprocessing chart #{row["number"]}"
+      
+      # Preprocess
+      # rotate if needed
+      if (row["prerotate"] != 0)
+        `#{$convert_command} #{jpg_path} -rotate #{row["prerotate"]} #{preprocessed_jpg_path}`
+        jpg = preprocessed_jpg_path
+      else
+        jpg = jpg_path
+      end
+      # create zl0 thumbnail
+      thumbnail_path = $thumbnail_path.gsub("{CHART_NUMBER}", number.to_s).gsub("{ZOOM_LEVEL}", '0')
+      `#{$convert_command} #{jpg} -resize 0.8% #{thumbnail_path}`
+      # create zl2 thumbnail
+      thumbnail_path = $thumbnail_path.gsub("{CHART_NUMBER}", number.to_s).gsub("{ZOOM_LEVEL}", '2')
+      `#{$convert_command} #{jpg} -resize 3% #{thumbnail_path}`
+      # create corner cut-outs
+      corner_size = row["cornersize"]
+      corner_path = $corner_path.gsub("{CHART_NUMBER}", number.to_s).gsub("{CORNER}", 'sw')
+      `#{$convert_command} #{jpg} -gravity SouthWest -crop #{corner_size}x#{corner_size}+0+0 -depth 8 -type Palette -colors 32 png8:#{corner_path}`
+      corner_path = $corner_path.gsub("{CHART_NUMBER}", number.to_s).gsub("{CORNER}", 'nw')
+      `#{$convert_command} #{jpg} -gravity NorthWest -crop #{corner_size}x#{corner_size}+0+0 -depth 8 -type Palette -colors 32 png8:#{corner_path}`
+      corner_path = $corner_path.gsub("{CHART_NUMBER}", number.to_s).gsub("{CORNER}", 'ne')
+      `#{$convert_command} #{jpg} -gravity NorthEast -crop #{corner_size}x#{corner_size}+0+0 -depth 8 -type Palette -colors 32 png8:#{corner_path}`
+      corner_path = $corner_path.gsub("{CHART_NUMBER}", number.to_s).gsub("{CORNER}", 'se')
+      `#{$convert_command} #{jpg} -gravity SouthEast -crop #{corner_size}x#{corner_size}+0+0 -depth 8 -type Palette -colors 32 png8:#{corner_path}`
+      #TODO: Here we could also publish the results to opencpn.info...
+    end
+  end
+  
   # Produces the chart
   def produce(number, percent, autorotate = false)
     output_dir = $output_dir.gsub("{CHART_NUMBER}", number.to_s)
