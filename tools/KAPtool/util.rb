@@ -69,4 +69,9 @@ class Util
     if (degrees < 0.0) then h = 'W' end
     puts sprintf("%i d %.3f m %s", d, m, h)
   end
+  
+  # Returns true if argument is a number
+  def Util.numeric?(object)
+    true if Float(object) rescue false
+  end
 end
