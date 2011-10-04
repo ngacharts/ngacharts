@@ -342,6 +342,7 @@ begin
     # assumed to have this option.
     opts.on( '-h', '--help', 'Display this screen' ) do
       puts opts
+      File.unlink($lock_path)
       exit
     end
   end
