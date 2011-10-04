@@ -196,7 +196,7 @@ class Chart
       puts "Generating corners for chart #{row["number"]}"
       
       # If rotated, use preprocessed JPG
-      if (row["prerotate"] != 0)
+      if (row["prerotate"].to_i != 0)
         jpg = preprocessed_jpg_path
       else
         jpg = jpg_path
