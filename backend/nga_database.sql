@@ -105,7 +105,7 @@ SELECT
   
   FLOOR(ABS(psw.longitude)) + (FLOOR((ABS(psw.longitude) - FLOOR(ABS(psw.longitude))) * 60) + ROUND((ABS(psw.longitude) - FLOOR(ABS(psw.longitude)) - FLOOR((ABS(psw.longitude) - FLOOR(ABS(psw.longitude))) * 60) / 60) * 3600, 1) DIV 60) DIV 60 AS Wdeg, (FLOOR((ABS(psw.longitude) - FLOOR(ABS(psw.longitude))) * 60) + ROUND((ABS(psw.longitude) - FLOOR(ABS(psw.longitude)) - FLOOR((ABS(psw.longitude) - FLOOR(ABS(psw.longitude))) * 60) / 60) * 3600, 1) DIV 60) % 60 AS Wmin, ROUND((ABS(psw.longitude) - FLOOR(ABS(psw.longitude)) - FLOOR((ABS(psw.longitude) - FLOOR(ABS(psw.longitude))) * 60) / 60) * 3600, 1) % 60 AS Wsec, IF(psw.longitude IS NULL, NULL, IF(psw.longitude >= 0, 1, -1)) AS Wehemi,
 
-  psw.x AS Xsw, psw.y AS Ysw, pnw.x AS Xnw, pnw.y AS Ynw, pne.x AS Xne, pne.y AS Yne, pse.x AS Xse, pse.y AS Yse
+  psw.x AS Xsw, psw.y AS Ysw, pnw.x AS Xnw, pnw.y AS Ynw, pne.x AS Xne, pne.y AS Yne, pse.x AS Xse, pse.y AS Yse, c.prerotate AS prerotate, c.cornersize AS cornersize
 FROM ocpn_nga_charts c 
    LEFT JOIN ocpn_nga_kap k ON (c.number = k.number and k.active = 1 AND k.bsb_type = 'BASE') 
    LEFT JOIN ocpn_nga_kap_point psw ON (k.kap_id = psw.kap_id AND psw.active=1 AND psw.sequence=1 AND psw.point_type='REF') 

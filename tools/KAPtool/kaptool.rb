@@ -184,6 +184,37 @@ class Chart
 #    $dbh.query("UPDATE ocpn_nga_kap SET kap_generated = CURRENT_TIMESTAMP() WHERE bsb_type = 'BASE' AND number=#{@number}")
   end
   
+  # Generates corner cut-outs for the chart the chart
+  # The chart has to be preprocessed already, the rotation is not done as part of this process
+  def generate_corners(number)
+    jpg_path = $jpg_path.gsub("{CHART_NUMBER}", number.to_s)
+    preprocessed_jpg_path = $preprocessed_jpg_path.gsub("{CHART_NUMBER}", number.to_s)
+    
+    res = $dbh.query("SELECT * FROM ocpn_nga_charts WHERE number=#{number}")
+
+    while row = res.fetch_hash do
+      puts "Generating corners for chart #{row["number"]}"
+      
+      # If rotated, use preprocessed JPG
+      if (row["prerotate"] != 0)
+        jpg = preprocessed_jpg_path
+      else
+        jpg = jpg_path
+      end
+      # create corner cut-outs
+      corner_size = row["cornersize"]
+      corner_path = $corner_path.gsub("{CHART_NUMBER}", number.to_s).gsub("{CORNER}", 'sw')
+      `#{$convert_command} #{jpg} -gravity SouthWest -crop #{corner_size}x#{corner_size}+0+0 -depth 8 -type Palette -colors 32 png8:#{corner_path}`
+      corner_path = $corner_path.gsub("{CHART_NUMBER}", number.to_s).gsub("{CORNER}", 'nw')
+      `#{$convert_command} #{jpg} -gravity NorthWest -crop #{corner_size}x#{corner_size}+0+0 -depth 8 -type Palette -colors 32 png8:#{corner_path}`
+      corner_path = $corner_path.gsub("{CHART_NUMBER}", number.to_s).gsub("{CORNER}", 'ne')
+      `#{$convert_command} #{jpg} -gravity NorthEast -crop #{corner_size}x#{corner_size}+0+0 -depth 8 -type Palette -colors 32 png8:#{corner_path}`
+      corner_path = $corner_path.gsub("{CHART_NUMBER}", number.to_s).gsub("{CORNER}", 'se')
+      `#{$convert_command} #{jpg} -gravity SouthEast -crop #{corner_size}x#{corner_size}+0+0 -depth 8 -type Palette -colors 32 png8:#{corner_path}`
+      #TODO: Here we could also publish the results to opencpn.info...
+    end
+  end
+  
   # Preprocesses the chart
   # If needed, the chart is rotated by a multiple of 90 degrees
   # The thumbnails and corner images are generated
@@ -210,16 +241,8 @@ class Chart
       # create zl2 thumbnail
       thumbnail_path = $thumbnail_path.gsub("{CHART_NUMBER}", number.to_s).gsub("{ZOOM_LEVEL}", '2')
       `#{$convert_command} #{jpg} -resize 3% #{thumbnail_path}`
-      # create corner cut-outs
-      corner_size = row["cornersize"]
-      corner_path = $corner_path.gsub("{CHART_NUMBER}", number.to_s).gsub("{CORNER}", 'sw')
-      `#{$convert_command} #{jpg} -gravity SouthWest -crop #{corner_size}x#{corner_size}+0+0 -depth 8 -type Palette -colors 32 png8:#{corner_path}`
-      corner_path = $corner_path.gsub("{CHART_NUMBER}", number.to_s).gsub("{CORNER}", 'nw')
-      `#{$convert_command} #{jpg} -gravity NorthWest -crop #{corner_size}x#{corner_size}+0+0 -depth 8 -type Palette -colors 32 png8:#{corner_path}`
-      corner_path = $corner_path.gsub("{CHART_NUMBER}", number.to_s).gsub("{CORNER}", 'ne')
-      `#{$convert_command} #{jpg} -gravity NorthEast -crop #{corner_size}x#{corner_size}+0+0 -depth 8 -type Palette -colors 32 png8:#{corner_path}`
-      corner_path = $corner_path.gsub("{CHART_NUMBER}", number.to_s).gsub("{CORNER}", 'se')
-      `#{$convert_command} #{jpg} -gravity SouthEast -crop #{corner_size}x#{corner_size}+0+0 -depth 8 -type Palette -colors 32 png8:#{corner_path}`
+      # generate corners
+      generate_corners(number)
       #TODO: Here we could also publish the results to opencpn.info...
     end
   end
@@ -306,7 +329,7 @@ begin
     end
   
     options[:action] = 'PRODNEW'
-    opts.on( '-a', '--action ACTION', "What to do:\n       PRODNEW - generate all new KAPs from the DB (default)\n       KAP - generate KAP\n       PLY - define polygon\n       PREPROCESS - rotate chart 90/180/270 degrees, create thumbnails, generate corners" ) do|action|
+    opts.on( '-a', '--action ACTION', "What to do:\n       PRODNEW - generate all new KAPs from the DB (default)\n       KAP - generate KAP\n       PLY - define polygon\n       PREPROCESS - rotate chart 90/180/270 degrees, create thumbnails, generate corners\n       CORNERS - generate corners" ) do|action|
       options[:action] = action.upcase
     end
     
@@ -346,6 +369,9 @@ begin
         when 'PREPROCESS'
           chart = Chart.new
           chart.preprocess(number)
+        when 'CORNERS'
+          chart = Chart.new
+          chart.generate_corners(number)
         else
           puts "Action #{options[:action]} unknown, exiting..."
           File.unlink($lock_path)
