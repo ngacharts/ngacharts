@@ -250,14 +250,16 @@ class Chart
   # Produces the chart
   def produce(number, percent, autorotate = false)
     output_dir = $output_dir.gsub("{CHART_NUMBER}", number.to_s)
+    
+    # load from db
+    @number =  number
+    load_from_db
+    
     if(@pre_rotate == 0)
       jpg_path = $jpg_path.gsub("{CHART_NUMBER}", number.to_s)
     else
       jpg_path = $preprocessed_jpg_path.gsub("{CHART_NUMBER}", number.to_s)
     end
-    # load from db
-    @number =  number
-    load_from_db
 
     rotation = @kaps[0].suggest_rotation
     puts "Suggested rotation: #{rotation}";
@@ -396,5 +398,7 @@ rescue Mysql::Error => e
 ensure
   # disconnect from server
   $dbh.close if $dbh
-  File.unlink($lock_path)
+  if (File.exists?($lock_path))
+    File.unlink($lock_path)
+  end
 end
