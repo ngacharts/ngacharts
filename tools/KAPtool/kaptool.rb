@@ -28,10 +28,16 @@ class Chart
   attr_accessor :bsb
   # array of KAPs representing the chart
   attr_accessor :kaps
+  # Chart rotated by multiple of 90 degrees has to be proprocessed to be north-up
+  attr_accessor :pre_rotate
+  # Size of the corner cut-out in pixels (defaults to 1500)
+  attr_accessor :corner_size
   
   # Default constructor
   def initialize
     @kaps = Array.new
+    @pre_rotate = 0
+    @corner_size = 1500
   end
 
   # Generates the 'BASE' KAPs for all the newly calibrated charts
@@ -52,6 +58,8 @@ class Chart
 
     while row = res.fetch_hash do
       #puts row.inspect
+      @pre_rotate = row["prerotate"]
+      @corner_size = row["cornersize"]
       @bsb = BSB.new
       @bsb.comment = "!This chart originates from
 !http://www.nauticalcharts.noaa.gov/mcd/OnLineViewer.html
@@ -215,8 +223,11 @@ class Chart
   # Produces the chart
   def produce(number, percent, autorotate = false)
     output_dir = $output_dir.gsub("{CHART_NUMBER}", number.to_s)
-    jpg_path = $jpg_path.gsub("{CHART_NUMBER}", number.to_s)
-    
+    if(@pre_rotate == 0)
+      jpg_path = $jpg_path.gsub("{CHART_NUMBER}", number.to_s)
+    else
+      jpg_path = $preprocessed_jpg_path.gsub("{CHART_NUMBER}", number.to_s)
+    end
     # load from db
     @number =  number
     load_from_db
