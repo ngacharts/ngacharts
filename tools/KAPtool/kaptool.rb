@@ -107,7 +107,11 @@ class Chart
       kap.crr = "This chart is released by the OpenCPN.info - NGA chart project."
       kap.bsb_na = row["title"]
       kap.bsb_nu = row["number"]
-      kap.bsb_ra = [row["width"].to_i, row["height"].to_i]
+      if (@pre_rotate != 90 && @pre_rotate != 270)
+        kap.bsb_ra = [row["width"].to_i, row["height"].to_i]
+      else
+        kap.bsb_ra = [row["height"].to_i, row["width"].to_i]
+      end
       kap.bsb_du = 72 # TODO - Will we bother with the DPI claculation?
       
       kap.ced_se = row["date"] #row["edition"]
@@ -330,25 +334,25 @@ begin
       exit
     end
     
-    ARGV.each do|chart|
-      if (Util::numeric?(chart))
-        puts "Crunching chart #{chart}..."
+    ARGV.each do|number|
+      if (Util::numeric?(number))
+        puts "Crunching chart #{number}..."
         case options[:action]
         when 'KAP'
           chart = Chart.new
-          chart.produce(chart, $kap_size_percent, $kap_autorotate)
+          chart.produce(number, $kap_size_percent, $kap_autorotate)
         when 'PLY'
           #TODO: implement...
         when 'PREPROCESS'
           chart = Chart.new
-          chart.preprocess(chart)
+          chart.preprocess(number)
         else
           puts "Action #{options[:action]} unknown, exiting..."
           File.unlink($lock_path)
           exit
         end
       else
-        puts "Argument #{chart} is not a number, exiting..."
+        puts "Argument #{number} is not a number, exiting..."
         File.unlink($lock_path)
         exit
       end
@@ -365,4 +369,5 @@ rescue Mysql::Error => e
 ensure
   # disconnect from server
   $dbh.close if $dbh
+  File.unlink($lock_path)
 end
