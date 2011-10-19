@@ -58,8 +58,8 @@ class Chart
 
     while row = res.fetch_hash do
       #puts row.inspect
-      @pre_rotate = row["prerotate"]
-      @corner_size = row["cornersize"]
+      @pre_rotate = row["prerotate"].to_i
+      @corner_size = row["cornersize"].to_i
       @bsb = BSB.new
       @bsb.comment = "!This chart originates from
 !http://www.nauticalcharts.noaa.gov/mcd/OnLineViewer.html
@@ -196,7 +196,7 @@ class Chart
       puts "Generating corners for chart #{row["number"]}"
       
       # If rotated, use preprocessed JPG
-      if (row["prerotate"] != 0)
+      if (row["prerotate"].to_i != 0)
         jpg = preprocessed_jpg_path
       else
         jpg = jpg_path
@@ -255,6 +255,7 @@ class Chart
     @number =  number
     load_from_db
     
+    puts "Pre-rotation: #{@pre_rotate}"
     if(@pre_rotate == 0)
       jpg_path = $jpg_path.gsub("{CHART_NUMBER}", number.to_s)
     else
