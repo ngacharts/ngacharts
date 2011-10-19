@@ -1,5 +1,5 @@
 #!/bin/sh
 cd /var/www/virtualhosts/opencpn.xtr.cz/nga-kap/data
-mysqldump -h DBSERVER -u DBUSER --password=DBPASSWORD DATABASE ocpn_nga_charts ocpn_nga_charts_links ocpn_nga_charts_status ocpn_nga_kap ocpn_nga_kap_point ocpn_nga_status >ngacharts.sql
+mysqldump -c -h DBSERVER -u DBUSER --password=DBPASSWORD DATABASE ocpn_nga_charts ocpn_nga_charts_links ocpn_nga_charts_status ocpn_nga_kap ocpn_nga_kap_point ocpn_nga_status >ngacharts.sql
 git commit -a --author="Server <ngacharts@gmail.com>" -m "Automatic data dump"
 git push origin master
