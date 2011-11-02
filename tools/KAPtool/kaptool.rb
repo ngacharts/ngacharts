@@ -405,7 +405,9 @@ begin
     Chart.process_new_base_calibrations
     
     # delete lock
-    File.unlink($lock_path)
+    if (File.exists?($lock_path))
+      File.unlink($lock_path)
+    end
   else
     if (ARGV.length != 1)
       puts "Usage: kaptool.rb [options] <chart number>"
