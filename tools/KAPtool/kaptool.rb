@@ -42,7 +42,7 @@ class Chart
 
   # Generates the 'BASE' KAPs for all the newly calibrated charts
   def Chart.process_new_base_calibrations
-    res = $dbh.query("SELECT number FROM ocpn_nga_charts_with_params WHERE status_id IN (1, 2, 3, 8, 14) AND kap_generated IS NULL AND North IS NOT NULL AND South IS NOT NULL AND East IS NOT NULL AND West IS NOT NULL AND Xsw IS NOT NULL AND Ysw IS NOT NULL AND Xnw IS NOT NULL AND Ynw IS NOT NULL AND Xne IS NOT NULL AND Yne AND Xse IS NOT NULL AND Yse IS NOT NULL")
+    res = $dbh.query("SELECT number FROM ocpn_nga_charts_with_params WHERE status_id IN (1, 2, 3, 8, 14, 18) AND kap_generated IS NULL AND North IS NOT NULL AND South IS NOT NULL AND East IS NOT NULL AND West IS NOT NULL AND Xsw IS NOT NULL AND Ysw IS NOT NULL AND Xnw IS NOT NULL AND Ynw IS NOT NULL AND Xne IS NOT NULL AND Yne AND Xse IS NOT NULL AND Yse IS NOT NULL")
 
     while row = res.fetch_hash do
       puts "Processing chart #{row["number"]}"
@@ -143,7 +143,6 @@ class Chart
       sw.latitude = row["South"].to_f
       sw.longitude = row["West"].to_f
       kap.ref << sw
-      kap.ply << sw.to_PLY
       
       nw = REF.new
       nw.idx = 2
@@ -152,7 +151,6 @@ class Chart
       nw.latitude = row["North"].to_f
       nw.longitude = row["West"].to_f
       kap.ref << nw
-      kap.ply << nw.to_PLY
       
       ne = REF.new
       ne.idx = 3
@@ -161,7 +159,6 @@ class Chart
       ne.latitude = row["North"].to_f
       ne.longitude = row["East"].to_f
       kap.ref << ne
-      kap.ply << ne.to_PLY
       
       se = REF.new
       se.idx = 4
@@ -170,7 +167,26 @@ class Chart
       se.latitude = row["South"].to_f
       se.longitude = row["East"].to_f
       kap.ref << se
-      kap.ply << se.to_PLY
+      
+      #TODO: this of course has to be elsewhere, there just because we made it easy and don't count with composite charts
+      res = $dbh.query("SELECT sequence, latitude, longitude FROM ocpn_nga_kap_point WHERE active = 1 AND point_type = 'PLY' AND kap_id IN (SELECT kap_id FROM ocpn_nga_kap WHERE  bsb_type = 'BASE' AND number = #{@number}) ORDER BY sequence")
+
+      while row = res.fetch_hash do
+        ply = PLY.new
+        ply.idx = row["sequence"].to_i
+        ply.latitude = row["latitude"].to_f
+        ply.longitude = row["longitude"].to_f
+        kap.ply << ply
+      end
+      
+      #when polygon is less than a triangle...
+      if kap.ply.length < 3
+        kap.ply.clear #clear the (we think erroneous PLY points)
+        kap.ply << sw.to_PLY
+        kap.ply << nw.to_PLY
+        kap.ply << ne.to_PLY
+        kap.ply << se.to_PLY
+      end
       
       if (kap.knp_pp == nil) then kap.compute_pp end
       kap.compute_cph
@@ -213,6 +229,39 @@ class Chart
       `#{$convert_command} #{jpg} -gravity SouthEast -crop #{corner_size}x#{corner_size}+0+0 -depth 8 -type Palette -colors 32 png8:#{corner_path}`
       #TODO: Here we could also publish the results to opencpn.info...
     end
+  end
+  
+  # Imports the PLY polygon from a GPX file 
+  def gpx_to_ply(number, gpx_file)
+    
+    # load from db
+    @number =  number
+    load_from_db
+    
+    if !@kaps[0].gpx_to_ply(gpx_file)
+      puts "Error"
+      return
+    end
+    res = $dbh.query("SELECT kap_id, status_id FROM ocpn_nga_kap WHERE bsb_type = 'BASE' AND active = 1 AND number = #{number}")
+    if (row = res.fetch_hash)
+      kap_id = row["kap_id"]
+      status_id = row["status_id"].to_i
+    else
+      puts "Can't find a KAP"
+      break
+    end
+    res = $dbh.query("UPDATE ocpn_nga_kap_point SET active = 0 WHERE point_type = 'PLY' AND active = 1 AND kap_id = #{kap_id}")
+    seq = 0
+    @kaps[0].ply.each{|ply|
+      seq += 1
+      #TODO: we do not have the user id, so we use 1 as "system"
+      res = $dbh.query("INSERT INTO ocpn_nga_kap_point (kap_id, latitude, longitude, x, y, point_type, created_by, created, sequence, active) VALUES (#{kap_id}, #{ply.latitude}, #{ply.longitude}, NULL, NULL, 'PLY', 1, CURRENT_TIMESTAMP(), #{seq}, 1)")
+    }
+    if (status_id == 8) #we want to keep the chart status, if it has insets, so change it just in case only problem is it needed the PLYs
+      status_id = 18
+    end
+    res = $dbh.query("UPDATE ocpn_nga_kap SET status_id = #{status_id}, changed = CURRENT_TIMESTAMP(), kap_generated = NULL WHERE bsb_type = 'BASE' AND active = 1 AND number = #{number}")
+    res = $dbh.query("UPDATE ocpn_nga_charts SET status_id = #{status_id} WHERE number = #{number}")
   end
   
   # Preprocesses the chart
@@ -297,7 +346,7 @@ class Chart
     `#{$imgkap_command} -p NONE -n #{output_dir}/#{number}.png #{output_dir}/#{number}.txt #{output_dir}/#{number}.kap`
     # save GPX with the boundaries
     @kaps[0].ply_to_gpx("#{output_dir}/#{number}.gpx")
-    $dbh.query("UPDATE ocpn_nga_kap SET kap_generated = CURRENT_TIMESTAMP() WHERE bsb_type = 'BASE' AND number=#{@number}")
+    $dbh.query("UPDATE ocpn_nga_kap SET kap_generated = CURRENT_TIMESTAMP() WHERE active = 1 AND bsb_type = 'BASE' AND number=#{@number}")
   end
 end
 
@@ -307,16 +356,6 @@ begin
   # get server version string and display it
   #puts "Server version: " + $dbh.get_server_info
   # check the lock nd exit if it exists
-  if (File.exists?($lock_path))
-    puts "KAPTool already running, exiting."
-    Process.exit
-  end
-  f = File.new($lock_path,"w")
-  begin
-    f.puts "Locked at #{Time.now.asctime}"
-  ensure
-    f.close
-  end
   
   options = {}
 
@@ -345,19 +384,31 @@ begin
     # assumed to have this option.
     opts.on( '-h', '--help', 'Display this screen' ) do
       puts opts
-      File.unlink($lock_path)
       exit
     end
   end
   
   optparse.parse!
-
+  
   if (options[:action] == 'PRODNEW')
+    if (File.exists?($lock_path))
+      puts "KAPTool already running, exiting."
+      Process.exit
+    end
+    f = File.new($lock_path,"w")
+    begin
+      f.puts "Locked at #{Time.now.asctime}"
+    ensure
+      f.close
+    end
+    
     Chart.process_new_base_calibrations
+    
+    # delete lock
+    File.unlink($lock_path)
   else
     if (ARGV.length != 1)
       puts "Usage: kaptool.rb [options] <chart number>"
-      File.unlink($lock_path)
       exit
     end
     
@@ -369,7 +420,8 @@ begin
           chart = Chart.new
           chart.produce(number, $kap_size_percent, $kap_autorotate)
         when 'PLY'
-          #TODO: implement...
+          chart = Chart.new
+          chart.gpx_to_ply(number, options[:polygon])
         when 'PREPROCESS'
           chart = Chart.new
           chart.preprocess(number)
@@ -378,19 +430,15 @@ begin
           chart.generate_corners(number)
         else
           puts "Action #{options[:action]} unknown, exiting..."
-          File.unlink($lock_path)
           exit
         end
       else
         puts "Argument #{number} is not a number, exiting..."
-        File.unlink($lock_path)
         exit
       end
     end
   end
 
-  # delete lock
-  File.unlink($lock_path)
 rescue Mysql::Error => e
   puts "Error code: #{e.errno}"
   puts "Error message: #{e.error}"

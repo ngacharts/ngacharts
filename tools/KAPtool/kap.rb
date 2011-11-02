@@ -823,12 +823,55 @@ class KAPHeader
         rte.points << ply.to_rtept(sprintf("%.1f", @dtm[0]).to_f / 3600, sprintf("%.1f", @dtm[1]).to_f / 3600)
       }
     end
-    rte.points << rte.points[0]
+    rte.points << rte.points.first
     gpx.routes << rte
     gpx.write(filename)
   end
-end
 
+  # Loads the PLY points from a GPX route
+  def gpx_to_ply(filename)
+    gpx = GPX::GPXFile.new(:gpx_file => filename)
+    
+    if (gpx.waypoints.length > 0 || gpx.tracks.length > 0 || gpx.routes.length > 1)
+      puts "The GPX file specified does not look like valid file containing just one route defining a single chart, not importing"
+      return false
+    end
+    
+    rte = gpx.routes.first
+    if (rte.name != @bsb_nu.to_s)
+      puts "Route name does not correspond with the chart number, this is a bit suspicious, not importing"
+      return false
+    end
+    
+    @ply.clear
+    
+    if (@dtm.nil? || @dtm[0].nil?)
+      cor_lat = 0
+    else
+      cor_lat = sprintf("%.1f", @dtm[0]).to_f / 3600
+    end
+    if (@dtm.nil? || @dtm[1].nil?)
+      cor_lon = 0
+    else
+      cor_lon = sprintf("%.1f", @dtm[1]).to_f / 3600
+    end
+    if (rte.points.length >= 4)
+      if (rte.points.first.lat == rte.points.last.lat && rte.points.first.lon == rte.points.last.lon)
+        rte.points.pop
+      end
+      idx = 1
+      rte.points.each {|point|
+        @ply << PLY.from_rtept(point, cor_lat, cor_lon, idx)
+        idx += 1
+      }
+    else
+      puts "The route defining the chart polygon has to have at least 4 points, exiting"
+      return false
+    end
+    return true
+  end
+
+end
 
 
 # This class represents a REF point
@@ -904,6 +947,16 @@ class PLY
     pt.lon = @longitude + lon_correction
     return pt
   end
+  
+  # Creates a new PLY point from a GPX route point
+  def PLY.from_rtept(rtept, lat_correction, lon_correction, idx)
+    ply = PLY.new
+    ply.latitude = rtept.lat - lat_correction
+    ply.longitude = rtept.lon - lon_correction
+    ply.idx = idx
+    return ply
+  end
+  
 end
 
 # This class represents a color from the KAP's color table
