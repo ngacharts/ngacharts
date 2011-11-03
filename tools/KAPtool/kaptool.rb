@@ -257,7 +257,7 @@ class Chart
       #TODO: we do not have the user id, so we use 1 as "system"
       res = $dbh.query("INSERT INTO ocpn_nga_kap_point (kap_id, latitude, longitude, x, y, point_type, created_by, created, sequence, active) VALUES (#{kap_id}, #{ply.latitude}, #{ply.longitude}, NULL, NULL, 'PLY', 1, CURRENT_TIMESTAMP(), #{seq}, 1)")
     }
-    if (status_id == 8) #we want to keep the chart status, if it has insets, so change it just in case only problem is it needed the PLYs
+    if (status_id == 8 || status_id == 1) #we want to keep the chart status, if it has insets, so change it just in case only problem is it needed the PLYs
       status_id = 18
     end
     res = $dbh.query("UPDATE ocpn_nga_kap SET status_id = #{status_id}, changed = CURRENT_TIMESTAMP(), kap_generated = NULL WHERE bsb_type = 'BASE' AND active = 1 AND number = #{number}")
@@ -445,11 +445,10 @@ rescue Mysql::Error => e
   puts "Error code: #{e.errno}"
   puts "Error message: #{e.error}"
   puts "Error SQLSTATE: #{e.sqlstate}" if e.respond_to?("sqlstate")
-  
-ensure
-  # disconnect from server
-  $dbh.close if $dbh
   if (File.exists?($lock_path))
     File.unlink($lock_path)
   end
+ensure
+  # disconnect from server
+  $dbh.close if $dbh
 end
