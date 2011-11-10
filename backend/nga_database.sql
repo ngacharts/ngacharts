@@ -5,7 +5,7 @@ DROP TABLE IF EXISTS `ocpn_nga_kap`;
 CREATE TABLE IF NOT EXISTS `ocpn_nga_kap` (
   `kap_id` int(11) NOT NULL auto_increment,
   `number` mediumint(9) unsigned NOT NULL,
-  `is_main` bit(1) NOT NULL default 1,
+  `is_main` bit(1) NOT NULL default '',
   `status_id` tinyint(4) unsigned default '0',
   `scale` mediumint(9) unsigned NOT NULL,
   `title` text NOT NULL,
@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS `ocpn_nga_kap` (
   `DTMdat` varchar(50) default NULL,
   `changed` timestamp NOT NULL default CURRENT_TIMESTAMP,
   `changed_by` bigint(20) unsigned NOT NULL,
-  `active` bit(1) NOT NULL default 1,
+  `active` bit(1) NOT NULL default '',
   `locked` timestamp NULL default NULL,
   `bsb_type` enum('BASE','INSET','PLAN','PANEL') default NULL,
   `GD_other` varchar(50) default NULL,
@@ -33,9 +33,12 @@ CREATE TABLE IF NOT EXISTS `ocpn_nga_kap` (
   `noPP` int(1) unsigned default NULL,
   `noDTM` int(1) unsigned default NULL,
   `kap_generated` timestamp NULL default NULL,
+  `gpx` text,
+  `inset_id` char(1) default NULL,
   PRIMARY KEY  (`kap_id`),
   KEY `number` (`number`)
 ) ENGINE=MyISAM  DEFAULT CHARSET=utf8;
+  
 
 
 DROP TABLE IF EXISTS `ocpn_nga_kap_point`;
