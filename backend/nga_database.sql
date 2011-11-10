@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS `ocpn_nga_kap` (
   `changed_by` bigint(20) unsigned NOT NULL,
   `active` bit(1) NOT NULL default 1,
   `locked` timestamp NULL default NULL,
-  `bsb_type` enum('BASE','INSET') default NULL,
+  `bsb_type` enum('BASE','INSET','PLAN','PANEL') default NULL,
   `GD_other` varchar(50) default NULL,
   `PR_other` varchar(50) default NULL,
   `UN_other` varchar(50) default NULL,
