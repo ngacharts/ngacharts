@@ -1,3 +1,16 @@
+<?php
+// ### Start the session
+session_start();
+
+$_SESSION['wp-user']['id'] = 1;
+
+// ### First let's see if the user is logged-in and if not redirect to the login page
+if(!$_SESSION['wp-user']['id']) {
+	header('Location: http://opencpn.info/en/nga-charts-edit');
+	exit;
+}
+?>
+
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 <title>NGA Charts project - Insets manager</title>
@@ -49,52 +62,66 @@
 <br />
 
 <script type="text/javascript">
+
+function succesfunc(){alert('OK');};
+function extraparam(){alert('extraparam');}; 
+function aftersavefunc(){alert('aftersave');};
+function errorfunc(){alert('error');};
+function afterrestorefunc(){alert('afterrestore');};
+
 var lastsel2;
 var cursel;
 var handleevents;
+var changed;
 jQuery("#list5").jqGrid({
    	url:'chartlist.php', 
 			datatype: "json", 
 			colNames:['ID','Chart nr.','Inset', 'Type', 'Title','Scale', 'X', 'Y', 'Width', 'Height'], 
 			colModel:[
 			{name:'id',index:'id', width:50}, 
-			{name:'number',index:'number', width:50, sorttype:"int", editable: true}, 
-			{name:'inset_id',index:'inset_id', width:40, editable: true,edittype:"select",editoptions:{value:"A:A;B:B;C:C;D:D;E:E;F:F;G:G;H:H;I:I;J:J;K:K;L:L;M:M;N:N;O:O;P:P;Q:Q;R:R;S:S;T:T;U:U;V:V;W:W;X:X;Y:Y;Z:Z"}},
-			{name:'bsb_type',index:'bsb_type', width:70, editable: true,edittype:"select",editoptions:{value:"INSET:INSET;PLAN:PLAN;PANEL:PANEL"}}, 
-			{name:'title',index:'title', width:400, sortable:false, editable:true}, 
-			{name:'scale',index:'scale', width:80,align:"right", sorttype:"int", editable: true}, 
-			{name:'x',index:'x', width:50,align:"right", sorttype:"int"}, 
-			{name:'y',index:'y', width:50,align:"right", sorttype:"int"}, 
-			{name:'w',index:'w', width:50,align:"right", sorttype:"int"}, 
-			{name:'h',index:'h', width:50,align:"right", sorttype:"int"}
+			{name:'number',index:'number', width:50, sorttype:"int", editable: true, editrules:{required:true, integer: true, minValue:0, maxValue: 99999}}, 
+			{name:'inset_id',index:'inset_id', width:40, editable: true,edittype:"select",editoptions:{value:"A:A;B:B;C:C;D:D;E:E;F:F;G:G;H:H;I:I;J:J;K:K;L:L;M:M;N:N;O:O;P:P;Q:Q;R:R;S:S;T:T;U:U;V:V;W:W;X:X;Y:Y;Z:Z"}, editrules:{required:true}},
+			{name:'bsb_type',index:'bsb_type', width:70, editable: true,edittype:"select",editoptions:{value:"INSET:INSET;PLAN:PLAN;PANEL:PANEL"}, editrules:{required:true}}, 
+			{name:'title',index:'title', width:400, sortable:false, editable:true, editrules:{required:true}}, 
+			{name:'scale',index:'scale', width:80,align:"right", sorttype:"int", editable: true, editrules:{required:true, integer: true, minValue:0, maxValue: 9999999}}, 
+			{name:'x',index:'x', width:50,align:"right", sorttype:"int", editable: true, editrules:{integer: true, minValue:0, maxValue: 99999}}, 
+			{name:'y',index:'y', width:50,align:"right", sorttype:"int", editable: true, editrules:{integer: true, minValue:0, maxValue: 99999}}, 
+			{name:'w',index:'w', width:50,align:"right", sorttype:"int", editable: true, editrules:{integer: true, minValue:0, maxValue: 99999}}, 
+			{name:'h',index:'h', width:50,align:"right", sorttype:"int", editable: true, editrules:{integer: true, minValue:0, maxValue: 99999}}
 			],
 			onSelectRow: function(id){
-				cursel=id;
-				handleevents=false;
-				var ret = jQuery("#list5").jqGrid('getRowData',id);
-				var chart = "http://opencpn.info/nga/chartimages/thumbs/" + ret.number + "_zl3.jpg";
-				jcrop_api.setImage(chart, function(){
-					if(ret.x != "" && ret.y != "" && ret.w !="" && ret.h!="")
-					{
-						x = Math.round(parseInt(ret.x) / 12.5);
-						y = Math.round(parseInt(ret.y) / 12.5);
-						w = Math.round(parseInt(ret.w) / 12.5);
-						h = Math.round(parseInt(ret.h) / 12.5);
-						x2 = x+w;
-						y2 = y+h;
-						jcrop_api.setSelect([x, y, x2, y2]);
-					};
-					handleevents=true;
-				});
+				if(id && id!==lastsel2){
+					cursel=id;
+					if (lastsel2 && changed){
+						jQuery('#list5').jqGrid('editRow', lastsel2, true); //Had to add this to force the AJAX callback... WHY??? 
+						jQuery('#list5').jqGrid('saveRow', lastsel2, false);
+
+					}
+					changed=false;
+					lastsel2=id;
+					handleevents=false;
+					var ret = jQuery("#list5").jqGrid('getRowData',id);
+					var chart = "http://opencpn.info/nga/chartimages/thumbs/" + ret.number + "_zl3.jpg";
+					jcrop_api.setImage(chart, function(){
+						if(ret.x != "" && ret.y != "" && ret.w !="" && ret.h!="")
+						{
+							x = Math.round(parseInt(ret.x) / 12.5);
+							y = Math.round(parseInt(ret.y) / 12.5);
+							w = Math.round(parseInt(ret.w) / 12.5);
+							h = Math.round(parseInt(ret.h) / 12.5);
+							x2 = x+w;
+							y2 = y+h;
+							jcrop_api.setSelect([x, y, x2, y2]);
+						};
+						handleevents=true;
+					});
+				};
 				
 				/*
 				if(id && id!==lastsel2){ 
 					jQuery('#list5').jqGrid('restoreRow',lastsel2); 
 					jQuery('#list5').jqGrid('editRow',id,true); 
-					lastsel2=id; 
-				}
-				else if(id){
-					jQuery('#list5').jqGrid('saveRow', lastsel2); 
+					
 				}
 				*/
 			},
@@ -105,10 +132,18 @@ jQuery("#list5").jqGrid({
 		   	sortname: 'id',
 			viewrecords: true,
 			sortorder: "desc",
-    			caption:"Simple data manipulation",
-			editurl:"someurl.php" 
+    		caption:"NGA Charts - Insets",
+			editurl:"save.php"
+<?php
+if(isset($_GET["chart"]))
+			echo ',postData:{"search":"true","searchField":"number","searchString":"'.(int)$_GET["chart"].'"}';
+?>
+
 });
 jQuery("#list5").jqGrid('navGrid',"#pager5",{edit:true,add:true,del:false});
+//jQuery("#list5").jqGrid('searchGrid', {sField: 'number', sValue: '14380', sOper: 'eq'});
+
+
 jQuery("#a1").click( function(){
 	var id = jQuery("#list5").jqGrid('getGridParam','selrow');
 	if (id)	{
@@ -159,12 +194,13 @@ jQuery("#a4").click( function(){
       	if (handleevents)
       	{
       		jQuery("#list5").setRowData( cursel, {x: Math.round(c.x * 12.5), y: Math.round(c.y * 12.5), w: Math.round(c.w * 12.5), h: Math.round(c.h * 12.5)} );
+      		changed=true;
       	};
   	};
 
 </script>
 
-<img src="dummy.png" id="target" alt="Flowers" />
+<img src="dummy.png" id="target" alt="Chart" />
 
 </body>
 </html>
