@@ -29,6 +29,8 @@ if(!$_SESSION['wp-user']['id']) {
 .ui-tabs-selected .ui-tabs-close {display: block;}
 .ui-layout-west .ui-jqgrid tr.jqgrow td { border-bottom: 0px none;}
 .ui-datepicker {z-index:1200;}
+.unsavedstyle {color: #FF0000; background-color: #FFCCCC; font-weight: bold; border: 2px solid; border-color: #FF0000; padding: 5px; margin: 10px;}
+.resetstyle {color: #333333; background-color: #CCCCCC; font-weight: bold; border: 2px solid; border-color: #999999; padding: 5px; margin: 10px;}
 </style>
 <script src="js/jquery-1.6.4.min.js" type="text/javascript"></script>
 <script type="text/javascript" src="js/jquery-ui-1.8.16.custom.min.js"></script>
@@ -51,28 +53,16 @@ if(!$_SESSION['wp-user']['id']) {
 <h1>NGA Charts project - Inset definition tool</h1>
 <table id="list5" class="table" summary="Inset list"></table>
 <div id="pager5"></div>
-<br />
-<a href="#" id="a1">Get data from selected row</a>
-<br />
-<a href="#" id="a2">Delete row 2</a>
-<br />
-<a href="#" id="a3">Update amounts in row 1</a>
-<br />
-<a href="#" id="a4">Add row with id 99</a>
-<br />
-
+<br/>
+<a href="#" id="unsaved" class="unsavedstyle">Save changes to the inset shape...</a>&nbsp;<a href="#" id="reset" class="resetstyle">Reset shape changes...</a>
+<br/><br/>
 <script type="text/javascript">
-
-function succesfunc(){alert('OK');};
-function extraparam(){alert('extraparam');}; 
-function aftersavefunc(){alert('aftersave');};
-function errorfunc(){alert('error');};
-function afterrestorefunc(){alert('afterrestore');};
 
 var lastsel2;
 var cursel;
 var handleevents;
 var changed;
+var shape;
 jQuery("#list5").jqGrid({
    	url:'chartlist.php', 
 			datatype: "json", 
@@ -95,7 +85,7 @@ jQuery("#list5").jqGrid({
 					if (lastsel2 && changed){
 						jQuery('#list5').jqGrid('editRow', lastsel2, true); //Had to add this to force the AJAX callback... WHY??? 
 						jQuery('#list5').jqGrid('saveRow', lastsel2, false);
-
+						jQuery("#unsaved").hide();
 					}
 					changed=false;
 					lastsel2=id;
@@ -111,19 +101,12 @@ jQuery("#list5").jqGrid({
 							h = Math.round(parseInt(ret.h) / 12.5);
 							x2 = x+w;
 							y2 = y+h;
-							jcrop_api.setSelect([x, y, x2, y2]);
+							shape = [x, y, x2, y2];
+							jcrop_api.setSelect(shape);
 						};
 						handleevents=true;
 					});
 				};
-				
-				/*
-				if(id && id!==lastsel2){ 
-					jQuery('#list5').jqGrid('restoreRow',lastsel2); 
-					jQuery('#list5').jqGrid('editRow',id,true); 
-					
-				}
-				*/
 			},
 			height:300,
 			rowNum:20,
@@ -141,48 +124,37 @@ if(isset($_GET["chart"]))
 
 });
 jQuery("#list5").jqGrid('navGrid',"#pager5",{edit:true,add:true,del:false});
-//jQuery("#list5").jqGrid('searchGrid', {sField: 'number', sValue: '14380', sOper: 'eq'});
 
+jQuery("#unsaved").click( function(){
+	jQuery('#list5').jqGrid('editRow', cursel, true); //Had to add this to force the AJAX callback... WHY??? 
+	jQuery('#list5').jqGrid('saveRow', cursel, false);
+	changed = false;
+	lastsel2 = cursel;
+	jQuery("#unsaved").hide();
+	jQuery("#reset").hide();
+});
 
-jQuery("#a1").click( function(){
-	var id = jQuery("#list5").jqGrid('getGridParam','selrow');
-	if (id)	{
-		var ret = jQuery("#list5").jqGrid('getRowData',id);
-		alert("id="+ret.id+" invdate="+ret.invdate+"...");
-	} else { alert("Please select row");}
+jQuery("#reset").click( function(){
+	jcrop_api.setSelect(shape);
+	changed = false;
+	jQuery("#unsaved").hide();
+	jQuery("#reset").hide();
 });
-jQuery("#a2").click( function(){
-	var su=jQuery("#list5").jqGrid('delRowData',12);
-	if(su) alert("Succes. Write custom code to delete row from server"); else alert("Allready deleted or not in list");
-});
-jQuery("#a3").click( function(){
-	var su=jQuery("#list5").jqGrid('setRowData',11,{amount:"333.00",tax:"33.00",total:"366.00",note:"<img src='images/user1.gif'/>"});
-	if(su) alert("Succes. Write custom code to update row in server"); else alert("Can not update");
-});
-jQuery("#a4").click( function(){
-	var datarow = {id:"99",invdate:"2007-09-01",name:"test3",note:"note3",amount:"400.00",tax:"30.00",total:"430.00"};
-	var su=jQuery("#list5").jqGrid('addRowData',99,datarow);
-	if(su) alert("Succes. Write custom code to add data in server"); else alert("Can not update");
-});
-	
-	
+
 </script>
 
 <script type="text/javascript">
 	var jcrop_api; // Holder for the API
 	jQuery(function($){
 		initJcrop();
+		jQuery("#unsaved").hide();
+		jQuery("#reset").hide();
 				
 		function initJcrop()
 		{
-			//$('.requiresjcrop').hide();
 			$('#target').Jcrop({onSelect: setCoords,
             onChange: setCoords},function(){
-				//$('.requiresjcrop').show();
 				jcrop_api = this;
-				//jcrop_api.animateTo([100,100,400,300]);
-				//$('#can_click,#can_move,#can_size').attr('checked','checked');
-				//$('#ar_lock,#size_lock,#bg_swap').attr('checked',false);
 				});
 			};
 		});
@@ -195,6 +167,8 @@ jQuery("#a4").click( function(){
       	{
       		jQuery("#list5").setRowData( cursel, {x: Math.round(c.x * 12.5), y: Math.round(c.y * 12.5), w: Math.round(c.w * 12.5), h: Math.round(c.h * 12.5)} );
       		changed=true;
+      		jQuery("#unsaved").show();
+      		jQuery("#reset").show();
       	};
   	};
 
