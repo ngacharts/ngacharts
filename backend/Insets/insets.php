@@ -2,11 +2,15 @@
 // ### Start the session
 session_start();
 
-$_SESSION['wp-user']['id'] = 1;
+//Uncomment for debug: $_SESSION['wp-user']['id'] = 1;
 
 // ### First let's see if the user is logged-in and if not redirect to the login page
 if(!$_SESSION['wp-user']['id']) {
 	header('Location: http://opencpn.info/en/nga-charts-edit');
+	exit;
+}
+if(!isset($_GET["chart"])) {
+	print 'You have to select a chart...';
 	exit;
 }
 ?>
@@ -91,7 +95,8 @@ jQuery("#list5").jqGrid({
 					lastsel2=id;
 					handleevents=false;
 					var ret = jQuery("#list5").jqGrid('getRowData',id);
-					var chart = "http://opencpn.info/nga/chartimages/thumbs/" + ret.number + "_zl3.jpg";
+					//var chart = "http://opencpn.info/nga/chartimages/thumbs/" + ret.number + "_zl3.jpg";
+					var chart = "http://opencpn.xtr.cz/nga-charts/thumbs/" + ret.number + "_zl3.jpg";
 					jcrop_api.setImage(chart, function(){
 						if(ret.x != "" && ret.y != "" && ret.w !="" && ret.h!="")
 						{

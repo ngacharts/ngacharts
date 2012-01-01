@@ -2,7 +2,7 @@
 // ### Start the session
 session_start();
 
-$_SESSION['wp-user']['id'] = 1;
+//Uncomment for debug: $_SESSION['wp-user']['id'] = 1;
 
 // ### First let's see if the user is logged-in and if not redirect to the login page
 if(!$_SESSION['wp-user']['id']) {
@@ -41,7 +41,7 @@ switch($_POST['oper'])
 		$sql = 'INSERT INTO ocpn_nga_kap (number, is_main, status_id, scale, title, NU, GD ,PR, PP ,UN, SD, DTMx, DTMy, DTMdat, changed, changed_by, active, locked, bsb_type, GD_other, PR_other, UN_other, SD_other, DTMdat_other, locked_by ,comments ,noPP, noDTM, kap_generated, gpx, inset_id) SELECT number, is_main, status_id, scale, title, NU, GD ,PR, PP ,UN, SD, DTMx, DTMy, DTMdat, changed, changed_by, 0, locked, bsb_type, GD_other, PR_other, UN_other, SD_other, DTMdat_other, locked_by ,comments ,noPP, noDTM, kap_generated, gpx, inset_id FROM ocpn_nga_kap WHERE active=1 AND kap_id='.$id;
 		$r = mysql_query($sql);
 		
-		$sql = 'UPDATE ocpn_nga_kap SET number='.$number.', scale='.$scale.', title=\''.$title.'\', bsb_type=\''.$bsb_type.'\', NU=\''.$number.$inset_id.'\', changed=CURRENT_TIMESTAMP(), changed_by='.$_SESSION['wp-user']['id'].', inset_id=\''.$inset_id.'\' WHERE kap_id='.$id;
+		$sql = 'UPDATE ocpn_nga_kap SET number='.$number.', scale='.$scale.', title=\''.$title.'\', bsb_type=\''.$bsb_type.'\', NU=\''.$number.$inset_id.'\', changed=CURRENT_TIMESTAMP(), changed_by='.$_SESSION['wp-user']['id'].', inset_id=\''.$inset_id.'\', cropped=NULL WHERE kap_id='.$id;
 		$r = mysql_query($sql);
 		
 		$sql = 'SELECT MIN(x) AS minx, MIN(y) AS miny FROM ocpn_nga_kap_point WHERE active=1 AND point_type=\'CROP\' AND kap_id='.$id;

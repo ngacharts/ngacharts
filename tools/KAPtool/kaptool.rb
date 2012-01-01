@@ -28,7 +28,7 @@ class Chart
   attr_accessor :bsb
   # array of KAPs representing the chart
   attr_accessor :kaps
-  # Chart rotated by multiple of 90 degrees has to be proprocessed to be north-up
+  # Chart rotated by multiple of 90 degrees has to be preprocessed to be north-up
   attr_accessor :pre_rotate
   # Size of the corner cut-out in pixels (defaults to 1500)
   attr_accessor :corner_size
@@ -48,6 +48,17 @@ class Chart
       puts "Processing chart #{row["number"]}"
       chart = Chart.new
       chart.produce(row["number"], $kap_size_percent, $kap_autorotate)
+    end
+  end
+  
+  # Generates the 'BASE' KAPs for all the newly calibrated charts
+  def Chart.process_new_insets
+    res = $dbh.query("SELECT DISTINCT number FROM ocpn_nga_kap WHERE kap_id IN (SELECT kap_id FROM ocpn_nga_kap_point WHERE active=1 AND point_type = 'CROP') AND cropped IS NULL")
+
+    while row = res.fetch_hash do
+      puts "Processing insets in chart #{row["number"]}"
+      chart = Chart.new
+      chart.crop_insets(row["number"])
     end
   end
     
@@ -200,6 +211,7 @@ class Chart
 #    $dbh.query("UPDATE ocpn_nga_kap SET kap_generated = CURRENT_TIMESTAMP() WHERE bsb_type = 'BASE' AND number=#{@number}")
   end
   
+  
   # Generates corner cut-outs for the chart the chart
   # The chart has to be preprocessed already, the rotation is not done as part of this process
   def generate_corners(number)
@@ -219,15 +231,57 @@ class Chart
       end
       # create corner cut-outs
       corner_size = row["cornersize"]
-      corner_path = $corner_path.gsub("{CHART_NUMBER}", number.to_s).gsub("{CORNER}", 'sw')
+      corner_path = $corner_path.gsub("{CHART_NUMBER}", number.to_s).gsub("{INSET}", "").gsub("{CORNER}", 'sw')
       `#{$convert_command} #{jpg} -gravity SouthWest -crop #{corner_size}x#{corner_size}+0+0 -depth 8 -type Palette -colors 32 png8:#{corner_path}`
-      corner_path = $corner_path.gsub("{CHART_NUMBER}", number.to_s).gsub("{CORNER}", 'nw')
+      corner_path = $corner_path.gsub("{CHART_NUMBER}", number.to_s).gsub("{INSET}", "").gsub("{CORNER}", 'nw')
       `#{$convert_command} #{jpg} -gravity NorthWest -crop #{corner_size}x#{corner_size}+0+0 -depth 8 -type Palette -colors 32 png8:#{corner_path}`
-      corner_path = $corner_path.gsub("{CHART_NUMBER}", number.to_s).gsub("{CORNER}", 'ne')
+      corner_path = $corner_path.gsub("{CHART_NUMBER}", number.to_s).gsub("{INSET}", "").gsub("{CORNER}", 'ne')
       `#{$convert_command} #{jpg} -gravity NorthEast -crop #{corner_size}x#{corner_size}+0+0 -depth 8 -type Palette -colors 32 png8:#{corner_path}`
-      corner_path = $corner_path.gsub("{CHART_NUMBER}", number.to_s).gsub("{CORNER}", 'se')
+      corner_path = $corner_path.gsub("{CHART_NUMBER}", number.to_s).gsub("{INSET}", "").gsub("{CORNER}", 'se')
       `#{$convert_command} #{jpg} -gravity SouthEast -crop #{corner_size}x#{corner_size}+0+0 -depth 8 -type Palette -colors 32 png8:#{corner_path}`
       #TODO: Here we could also publish the results to opencpn.info...
+    end
+  end
+  
+  # Crops the insets of a specified chart and generates corner cut-outs
+  # The chart has to be preprocessed already, the rotation is not done as part of this process
+  def crop_insets(number)
+    jpg_path = $jpg_path.gsub("{CHART_NUMBER}", number.to_s)
+    preprocessed_jpg_path = $preprocessed_jpg_path.gsub("{CHART_NUMBER}", number.to_s)
+    
+    res = $dbh.query("SELECT * FROM ocpn_nga_charts WHERE number=#{number}")
+
+    while row = res.fetch_hash do
+      puts "Cropping insets and generating their corners for chart #{row["number"]}"
+      
+      # If rotated, use preprocessed JPG
+      if (row["prerotate"].to_i != 0)
+        jpg = preprocessed_jpg_path
+      else
+        jpg = jpg_path
+      end
+    end
+    res = $dbh.query("SELECT *, (SELECT MIN(x) FROM ocpn_nga_kap_point WHERE point_type='CROP' AND active=1 AND kap_id=k.kap_id) AS x, (SELECT MAX(x) FROM ocpn_nga_kap_point WHERE point_type='CROP' AND active=1 AND kap_id=k.kap_id) AS x1, (SELECT MIN(y) FROM ocpn_nga_kap_point WHERE point_type='CROP' AND active=1 AND kap_id=k.kap_id) AS y, (SELECT MAX(y) FROM ocpn_nga_kap_point WHERE point_type='CROP' AND active=1 AND kap_id=k.kap_id) AS y1 FROM ocpn_nga_kap k WHERE bsb_type!='BASE' AND active=1 AND number=#{number}")
+    while row = res.fetch_hash do
+      corner_size = row["cornersize"]
+      puts corner_size
+      # check whether the data entered are ok
+      if(row["x"].to_i >= 0 && row["y"].to_i >= 0 && row["x1"].to_i > row["x"].to_i && row["y1"].to_i > row["y"].to_i)
+        inset_path = $inset_path.gsub("{CHART_NUMBER}", number.to_s).gsub("{INSET}", row["inset_id"])
+        `#{$convert_command} #{jpg} -crop #{row["x1"].to_i - row["x"].to_i}x#{row["y1"].to_i - row["y"].to_i}+#{row["x"]}+#{row["y"]} #{inset_path}`
+      
+        # create corner cut-outs
+        corner_path = $corner_path.gsub("{CHART_NUMBER}", number.to_s).gsub("{INSET}", row["inset_id"]).gsub("{CORNER}", 'sw')
+        `#{$convert_command} #{inset_path} -gravity SouthWest -crop #{corner_size}x#{corner_size}+0+0 -depth 8 -type Palette -colors 32 png8:#{corner_path}`
+        corner_path = $corner_path.gsub("{CHART_NUMBER}", number.to_s).gsub("{INSET}", row["inset_id"]).gsub("{CORNER}", 'nw')
+        `#{$convert_command} #{inset_path} -gravity NorthWest -crop #{corner_size}x#{corner_size}+0+0 -depth 8 -type Palette -colors 32 png8:#{corner_path}`
+        corner_path = $corner_path.gsub("{CHART_NUMBER}", number.to_s).gsub("{INSET}", row["inset_id"]).gsub("{CORNER}", 'ne')
+        `#{$convert_command} #{inset_path} -gravity NorthEast -crop #{corner_size}x#{corner_size}+0+0 -depth 8 -type Palette -colors 32 png8:#{corner_path}`
+        corner_path = $corner_path.gsub("{CHART_NUMBER}", number.to_s).gsub("{INSET}", row["inset_id"]).gsub("{CORNER}", 'se')
+        `#{$convert_command} #{inset_path} -gravity SouthEast -crop #{corner_size}x#{corner_size}+0+0 -depth 8 -type Palette -colors 32 png8:#{corner_path}`
+  
+        $dbh.query("UPDATE ocpn_nga_kap SET cropped=CURRENT_TIMESTAMP() WHERE kap_id=#{row["kap_id"]}")
+      end
     end
   end
   
@@ -371,7 +425,7 @@ begin
     end
   
     options[:action] = 'PRODNEW'
-    opts.on( '-a', '--action ACTION', "What to do:\n       PRODNEW - generate all new KAPs from the DB (default)\n       KAP - generate KAP\n       PLY - define polygon\n       PREPROCESS - rotate chart 90/180/270 degrees, create thumbnails, generate corners\n       CORNERS - generate corners" ) do|action|
+    opts.on( '-a', '--action ACTION', "What to do:\n       PRODNEW - generate all new KAPs from the DB (default)\n       KAP - generate KAP\n       PLY - define polygon\n       PREPROCESS - rotate chart 90/180/270 degrees, create thumbnails, generate corners\n       CORNERS - generate corners\n       CROP - crops the insets and generates their corners" ) do|action|
       options[:action] = action.upcase
     end
     
@@ -403,6 +457,7 @@ begin
     end
     
     Chart.process_new_base_calibrations
+    Chart.process_new_insets
     
     # delete lock
     if (File.exists?($lock_path))
@@ -430,6 +485,9 @@ begin
         when 'CORNERS'
           chart = Chart.new
           chart.generate_corners(number)
+        when 'CROP'
+          chart = Chart.new
+          chart.crop_insets(number)
         else
           puts "Action #{options[:action]} unknown, exiting..."
           exit

@@ -39,7 +39,13 @@ $thumbnail_path = "C:\\work\\opencpn\\ngacharts\\tools\\thumbs\\{CHART_NUMBER}_z
 # Path to the corner cut-outs of the chart images
 # You can use {CHART_NUMBER} which will be substituted with the corresponding chart number while it's being processed
 # You can use {CORNER} which will be substituted with the corner id (SE, NE, SW, NW) while it's being processed
-$corner_path = "C:\\work\\opencpn\\ngacharts\\tools\\{CHART_NUMBER}\\{CHART_NUMBER}_{CORNER}.png"
+# You can use {INSET} which will be substituted with the inset id (A, B, C...) while it's being processed
+$corner_path = "C:\\work\\opencpn\\ngacharts\\tools\\{CHART_NUMBER}\\{CHART_NUMBER}{INSET}_{CORNER}.png"
+
+# Path to the cropped insets of the chart images
+# You can use {CHART_NUMBER} which will be substituted with the corresponding chart number while it's being processed
+# You can use {INSET} which will be substituted with the inset id (A, B, C...) while it's being processed
+$inset_path = "C:\\work\\opencpn\\ngacharts\\tools\\{CHART_NUMBER}\\{CHART_NUMBER}{INSET}.jpg"
 
 # directory to save all the output
 # You can use {CHART_NUMBER} which will be substituted with the corresponding chart number while it's being processed
