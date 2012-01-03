@@ -22,6 +22,33 @@ color:white;
 require_once("config.php");
 $link = mysql_connect($server, $usr, $pwd);
 mysql_select_db($db);
+
+$query = '
+(SELECT ((@rownum0:=@rownum0+1) - 1) DIV 50 + 1 AS page, c.number AS number, \'misc\' AS region  FROM ocpn_nga_charts c, (SELECT @rownum0:=0) r WHERE number < 10000 ORDER BY number ASC)
+UNION
+(SELECT ((@rownum1:=@rownum1+1) - 1) DIV 50 + 1 AS page, c.number AS number, c.number DIV 10000 AS region  FROM ocpn_nga_charts c, (SELECT @rownum1:=0) r WHERE number >= 10000 AND number < 20000 ORDER BY number ASC)
+UNION
+(SELECT ((@rownum2:=@rownum2+1) - 1) DIV 50 + 1 AS page, c.number AS number, c.number DIV 10000 AS region  FROM ocpn_nga_charts c, (SELECT @rownum2:=0) r WHERE number >= 20000 AND number < 30000 ORDER BY number ASC)
+UNION
+(SELECT ((@rownum3:=@rownum3+1) - 1) DIV 50 + 1 AS page, c.number AS number, c.number DIV 10000 AS region  FROM ocpn_nga_charts c, (SELECT @rownum3:=0) r WHERE number >= 30000 AND number < 40000 ORDER BY number ASC)
+UNION
+(SELECT ((@rownum4:=@rownum4+1) - 1) DIV 50 + 1 AS page, c.number AS number, c.number DIV 10000 AS region  FROM ocpn_nga_charts c, (SELECT @rownum4:=0) r WHERE number >= 40000 AND number < 50000 ORDER BY number ASC)
+UNION
+(SELECT ((@rownum5:=@rownum5+1) - 1) DIV 50 + 1 AS page, c.number AS number, c.number DIV 10000 AS region  FROM ocpn_nga_charts c, (SELECT @rownum5:=0) r WHERE number >= 50000 AND number < 60000 ORDER BY number ASC)
+UNION
+(SELECT ((@rownum6:=@rownum6+1) - 1) DIV 50 + 1 AS page, c.number AS number, c.number DIV 10000 AS region  FROM ocpn_nga_charts c, (SELECT @rownum6:=0) r WHERE number >= 60000 AND number < 70000 ORDER BY number ASC)
+UNION
+(SELECT ((@rownum7:=@rownum7+1) - 1) DIV 50 + 1 AS page, c.number AS number, c.number DIV 10000 AS region  FROM ocpn_nga_charts c, (SELECT @rownum7:=0) r WHERE number >= 70000 AND number < 80000 ORDER BY number ASC)
+UNION
+(SELECT ((@rownum8:=@rownum8+1) - 1) DIV 50 + 1 AS page, c.number AS number, c.number DIV 10000 AS region  FROM ocpn_nga_charts c, (SELECT @rownum8:=0) r WHERE number >= 80000 AND number < 90000 ORDER BY number ASC)
+UNION
+(SELECT ((@rownum9:=@rownum9+1) - 1) DIV 50 + 1 AS page, c.number AS number, c.number DIV 10000 AS region  FROM ocpn_nga_charts c, (SELECT @rownum9:=0) r WHERE number >= 90000 AND number < 100000 ORDER BY number ASC)';
+$res = mysql_query($query);
+while($r = mysql_fetch_array($res))
+{
+	$paging[$r['number']] = array('page' => $r['page'], 'region' => $r['region']);
+}
+
 if (isset($_GET['region_id']) && isset($_GET['status_id']))
 {
 	$region = (int)$_GET['region_id'];
@@ -59,7 +86,7 @@ if (isset($_GET['region_id']) && isset($_GET['status_id']))
 						$reg = (int) floor($v / 10000);
 					else
 						$reg = 'misc';
-					echo '<td><a href="http://opencpn.info/en/nga-charts-status-'.$reg.'#'.$v.'">'.$v.'</a></td>';
+					echo '<td><a href="http://opencpn.info/en/nga-charts-status-'.$reg.'?page='.$paging[$v]['page'].'#'.$v.'">'.$v.'</a></td>';
 				}
 			}
 		echo "</tr>\n";
