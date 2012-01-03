@@ -32,9 +32,10 @@ $x1 = $x + $w;
 $y1 = $y + $h;
 
 //test the data
-if ($number == 0)//The following would be confusing for added records: || $x1 == 0 || $y1 == 0 || $x1 - $x < 100 || $y1 - $y < 100)
+if ($_POST['oper'] != 'del' && $number == 0)//The following would be confusing for added records: || $x1 == 0 || $y1 == 0 || $x1 - $x < 100 || $y1 - $y < 100)
 	die(); //Not properly defined or too small to be an inset
 //fwrite($fh, $_POST['oper']."\n");
+
 switch($_POST['oper'])
 {
 	case 'edit':
@@ -73,6 +74,10 @@ switch($_POST['oper'])
 		$sql = 'INSERT INTO ocpn_nga_kap_point (kap_id, latitude, longitude, x, y, point_type, created_by, created, sequence, active) VALUES ('.$id.', NULL, NULL, '.$x1.', '.$y1.', \'CROP\', '.$_SESSION['wp-user']['id'].', CURRENT_TIMESTAMP(), 2, 1)';
 		//fwrite($fh, $sql."\n");
 		mysql_query($sql);
+		break;
+	case 'del':
+		$sql = 'UPDATE ocpn_nga_kap SET active=0, changed=CURRENT_TIMESTAMP(), changed_by='.$_SESSION['wp-user']['id'].', cropped=NULL WHERE kap_id='.$id;
+		$r = mysql_query($sql);
 		break;
 }
 

@@ -120,7 +120,7 @@ jQuery("#list5").jqGrid({
 		   	sortname: 'id',
 			viewrecords: true,
 			sortorder: "desc",
-    		caption:"NGA Charts - Insets",
+	    		caption:"NGA Charts - Insets",
 			editurl:"save.php"
 <?php
 if(isset($_GET["chart"]))
@@ -128,7 +128,7 @@ if(isset($_GET["chart"]))
 ?>
 
 });
-jQuery("#list5").jqGrid('navGrid',"#pager5",{edit:true,add:true,del:false});
+jQuery("#list5").jqGrid('navGrid',"#pager5",{edit:true,add:true,del:true});
 
 jQuery("#unsaved").click( function(){
 	jQuery('#list5').jqGrid('editRow', cursel, true); //Had to add this to force the AJAX callback... WHY??? 
