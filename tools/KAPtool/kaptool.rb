@@ -53,7 +53,7 @@ class Chart
   
   # Generates the 'BASE' KAPs for all the newly calibrated charts
   def Chart.process_new_insets
-    res = $dbh.query("SELECT DISTINCT number FROM ocpn_nga_kap WHERE kap_id IN (SELECT kap_id FROM ocpn_nga_kap_point WHERE active=1 AND point_type = 'CROP') AND cropped IS NULL")
+    res = $dbh.query("SELECT DISTINCT number FROM ocpn_nga_kap WHERE active=1 AND kap_id IN (SELECT kap_id FROM ocpn_nga_kap_point WHERE active=1 AND point_type = 'CROP') AND cropped IS NULL")
 
     while row = res.fetch_hash do
       puts "Processing insets in chart #{row["number"]}"
