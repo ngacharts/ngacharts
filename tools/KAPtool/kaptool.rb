@@ -54,6 +54,8 @@ class Chart
   # Generates the 'BASE' KAPs for all the newly calibrated charts
   def Chart.process_new_insets
     $dbh.query("DELETE FROM ocpn_nga_kap WHERE number NOT IN (SELECT number FROM ocpn_nga_charts)") #Clean the bad user input
+    $dbh.query("DELETE FROM ocpn_nga_kap_point WHERE kap_id NOT IN (SELECT kap_id FROM ocpn_nga_kap)")
+    $dbh.query("DELETE FROM ocpn_nga_kap_point WHERE point_type='CROP' AND active = 1 AND kap_id IN(SELECT kap_id FROM (SELECT kap_id, MAX(x) AS xm, MAX(y) AS ym FROM ocpn_nga_kap_point WHERE active = 1 GROUP BY kap_id) t WHERE t.xm = 0 AND t.ym = 0)")
     
     res = $dbh.query("SELECT DISTINCT number FROM ocpn_nga_kap WHERE active=1 AND kap_id IN (SELECT kap_id FROM ocpn_nga_kap_point WHERE active=1 AND point_type = 'CROP') AND cropped IS NULL")
 
