@@ -160,14 +160,18 @@ unless ARGV[0]
         tile_url = URI.join($full_path.to_s, "TileGroup#{tile_group}/#{filename}")
         url = URI.join(tile_url.to_s, filename)
         puts "    Getting #{url}..."
-        File.open(local_filepath, 'wb') {|f|
-          begin
-            f.print url.read
-          rescue OpenURI::HTTPError
-            puts "Tile #{$zoom}-#{x}-#{y} not found, trying to reconstruct from lower zoom levels"
-            reconstruct_tile $zoom, x, y, local_filepath
-          end
-        }
+	if (File.size?(local_filepath) == nil)
+          File.open(local_filepath, 'wb') {|f|
+            begin
+              f.print url.read
+            rescue OpenURI::HTTPError
+              puts "Tile #{$zoom}-#{x}-#{y} not found, trying to reconstruct from lower zoom levels"
+              reconstruct_tile $zoom, x, y, local_filepath
+            end
+          }
+	else
+          puts "Tile already downloaded..."
+	end
       end
       files_by_row << row
     end
@@ -194,7 +198,7 @@ unless ARGV[0]
     FileUtils.mv("#{filename}","#{working_dir}/#{ARGV[0]}.jpg")
     puts "Finished:#{ARGV[0]}.jpg"
      FileUtils.cd('/tmp', options = {})
-     #FileUtils.rm Dir.glob('*.jpg')   
+     FileUtils.rm Dir.glob('*.jpg')   
 
    end
   
