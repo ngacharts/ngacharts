@@ -11,6 +11,8 @@
 #limit memory 2048
 #using ruby 1.9
 
+require 'net/http'
+require 'tempfile'
 require 'open-uri'
 require 'rubygems'
 require 'nokogiri'
@@ -192,7 +194,7 @@ unless ARGV[0]
     FileUtils.mv("#{filename}","#{working_dir}/#{ARGV[0]}.jpg")
     puts "Finished:#{ARGV[0]}.jpg"
      FileUtils.cd('/tmp', options = {})
-     FileUtils.rm Dir.glob('*.jpg')   
+     #FileUtils.rm Dir.glob('*.jpg')   
 
    end
   
