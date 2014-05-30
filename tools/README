@@ -12,4 +12,4 @@ gem install gpx
 gem install libxml-ruby
 
 Compiling imgkap:
-gcc -I./FreeImage/Source/ imgkap.c -O3 -s -lfreeimage -o imgkap
+gcc -I./FreeImage/Source/ imgkap.c -O3 -s -lm -lfreeimage -o imgkap
